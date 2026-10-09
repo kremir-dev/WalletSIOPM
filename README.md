@@ -1,8 +1,29 @@
 # WalletSIOPM
 
+[![GitHub Release](https://shields.io)](https://github.com)
+[![GitHub Downloads](https://shields.io)](https://github.com)
+[![License: GPL v2](https://shields.io)](https://gnu.org)
+
 MyWallet is an open-source Android application designed to track and manage recurring subscriptions, personal income, one-off expenses, and comprehensive payment schedules.
 
 > **Note:** This project is currently under active development. Core features, UI components, and architectural implementations are subject to change.
+
+## Changelog
+
+### Release v1.1.0
+
+#### New Features and Enhancements
+* **Analytical Reporting:** Integrated a new data table visualizing subscription expenditure via percentage distribution metrics.
+* **Custom Categories:** Extended custom category support to both global search filters and custom budget limit configurations within the settings panel.
+* **Data Mutation Flexibility:** Enabled category modification capabilities directly within the active subscription editing workflow.
+* **UI/UX Optimization:** Redesigned and customized the navigation submenu and updated the application icon asset to align with current branding guidelines.
+
+#### Bug Fixes
+* **Routing:** Resolved a critical navigation error preventing user redirection to the application homepage.
+* **Data Synchronization:** Fixed an issue where active budget limits erroneously displayed as "Not set" within the Subscriptions section.
+* **Submenu and Deletion Stability:** Resolved rendering exceptions within the submenu and fixed the failure occurring during subscription removal procedures.
+
+---
 
 ## Features
 
@@ -18,13 +39,20 @@ MyWallet is an open-source Android application designed to track and manage recu
 * **Biometric Authentication:** Enhanced data privacy securing sensitive financial records via fingerprint or facial recognition using the `BiometricPrompt` API.
 * **Offline-First Storage:** Reliable, multi-entity local data persistence powered by AndroidX Room.
 * **User Interface:** Dark and Light themed layouts built strictly with Material Design 3 specifications, utilizing explicit single-choice dialogs (`setSingleChoiceItems`) for precise user selection.
-<img width="341" height="728" alt="Ekran Görüntüsü_20261001_232231" src="https://github.com/user-attachments/assets/a276eb39-a5fc-4db8-b482-bb85392bc64e" />
-<img width="343" height="719" alt="Ekran Görüntüsü_20261001_231739" src="https://github.com/user-attachments/assets/7c6cfec8-ca80-4fc2-9b65-089f8927f59b" />
-<img width="342" height="724" alt="Ekran Görüntüsü_20261001_231334" src="https://github.com/user-attachments/assets/55fe76bc-e350-44e7-adc0-cedb27d83ef2" />
-<img width="336" height="722" alt="Ekran Görüntüsü_20261001_231025" src="https://github.com/user-attachments/assets/bafe597e-d5b7-426a-8912-4b05e9c587a6" />
-<img width="334" height="728" alt="Ekran Görüntüsü_20261001_230933" src="https://github.com/user-attachments/assets/d0132afe-0697-4726-b6ec-a933a82fa480" />
-<img width="341" height="718" alt="Ekran Görüntüsü_20261001_230726" src="https://github.com/user-attachments/assets/581c5484-db16-4406-bea3-cc4512b84b2d" />
-<img width="345" height="719" alt="Ekran Görüntüsü_20261001_230603" src="https://github.com/user-attachments/assets/f5edbab9-5d8c-4826-b041-08c2906477ca" />
+
+## User Interface Screenshots
+
+<p align="center">
+  <img width="341" height="728" alt="Dashboard" src="https://github.com" />
+  <img width="343" height="719" alt="Subscription Details" src="https://github.com" />
+  <img width="342" height="724" alt="Analytics View" src="https://github.com" />
+</p>
+<p align="center">
+  <img width="336" height="722" alt="Category Management" src="https://github.com" />
+  <img width="334" height="728" alt="Settings Menu" src="https://github.com" />
+  <img width="341" height="718" alt="Add Transaction" src="https://github.com" />
+  <img width="345" height="719" alt="Biometric Prompt" src="https://github.com" />
+</p>
 
 ## Tech Stack
 
@@ -40,21 +68,19 @@ Follow these steps to set up and run the project locally:
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/kremir-dev/WalletSIOPM.git
+   git clone https://github.com
    ```
 2. Open the project in **Android Studio**.
 3. Sync the project with Gradle files and deploy to an emulator or physical device.
 
-## Downloading APK
+## Deployment & Installation
 
-1. Go to the **Releases** section of the repository.
-2. Select the version you want to download.
-3. Download the APK file.
-4. Install it on your Android device.
+To install the application directly onto your device:
 
+1. Navigate to the [Releases](https://github.com) section of this repository.
 
-[![Release](https://img.shields.io/github/v/release/kremir-dev/WalletSIOPM?color=blue&style=flat-square&logo=github)](https://github.com/kremir-dev/WalletSIOPM/releases/latest)
-
-[![Downloads](https://img.shields.io/github/downloads/kremir-dev/WalletSIOPM/total?color=green&style=flat-square&logo=github)](https://github.com/kremir-dev/WalletSIOPM/releases)
-
-[![Get it on GitHub](https://img.shields.io/badge/Get_it_on-GitHub-black?style=for-the-badge&logo=github)](https://github.com/kremir-dev/WalletSIOPM/releases/latest)
+2. [![GitHub Release](https://shields.io)](https://github.com)
+[![GitHub Downloads](https://shields.io)](https://github.com)
+[![License: GPL v2](https://shields.io)](https://gnu.org)
+3. Select the target production build.
+4. Download and execute the provided `.apk` asset on your Android device.
