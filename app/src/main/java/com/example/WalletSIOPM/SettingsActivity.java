@@ -474,16 +474,20 @@ public class SettingsActivity extends AppCompatActivity {
 
         // 8. GitHub Kaynak Kodu
         btnGithubRepo.setOnClickListener(v -> {
-            Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/EmirKerem33/Subscription-Tracker"));
-            startActivity(browserIntent);
+            try {
+                Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/kremir-dev/WalletSIOPM"));
+                startActivity(browserIntent);
+            } catch (Exception e) {
+                Toast.makeText(this, "Could not open browser: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            }
         });
 
         // 9. Geri Bildirim / E-posta Gönder
         btnSendFeedback.setOnClickListener(v -> {
             Intent emailIntent = new Intent(Intent.ACTION_SENDTO);
             emailIntent.setData(Uri.parse("mailto:"));
-            emailIntent.putExtra(Intent.EXTRA_EMAIL, new String[]{"emirk.turken@gmail.com"});
-            emailIntent.putExtra(Intent.EXTRA_SUBJECT, "Subscription Tracker - Feedback");
+            emailIntent.putExtra(Intent.EXTRA_EMAIL, new String[]{"kremirdev@proton.me"});
+            emailIntent.putExtra(Intent.EXTRA_SUBJECT, "WalletSIOPM - Feedback");
             try {
                 startActivity(Intent.createChooser(emailIntent, "Send Feedback via Email"));
             } catch (Exception e) {
