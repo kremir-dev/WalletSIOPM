@@ -5,7 +5,7 @@ MyWallet is an open-source Android application designed to track and manage recu
 
 ## Changelog
 
-### Release v1.1.0
+### Release v2.3.0
 
 #### New Features and Enhancements
 * **Analytical Reporting:** Integrated a new data table visualizing subscription expenditure via percentage distribution metrics.
