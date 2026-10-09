@@ -2,7 +2,6 @@
 
 MyWallet is an open-source Android application designed to track and manage recurring subscriptions, personal income, one-off expenses, and comprehensive payment schedules.
 
-> **Note:** This project is currently under active development. Core features, UI components, and architectural implementations are subject to change.
 
 ## Changelog
 
