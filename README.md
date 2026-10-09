@@ -1,9 +1,5 @@
 # WalletSIOPM
 
-[![GitHub Release](https://shields.io)](https://github.com)
-[![GitHub Downloads](https://shields.io)](https://github.com)
-[![License: GPL v2](https://shields.io)](https://gnu.org)
-
 MyWallet is an open-source Android application designed to track and manage recurring subscriptions, personal income, one-off expenses, and comprehensive payment schedules.
 
 > **Note:** This project is currently under active development. Core features, UI components, and architectural implementations are subject to change.
@@ -40,20 +36,6 @@ MyWallet is an open-source Android application designed to track and manage recu
 * **Offline-First Storage:** Reliable, multi-entity local data persistence powered by AndroidX Room.
 * **User Interface:** Dark and Light themed layouts built strictly with Material Design 3 specifications, utilizing explicit single-choice dialogs (`setSingleChoiceItems`) for precise user selection.
 
-## User Interface Screenshots
-
-<p align="center">
-  <img width="341" height="728" alt="Dashboard" src="https://github.com" />
-  <img width="343" height="719" alt="Subscription Details" src="https://github.com" />
-  <img width="342" height="724" alt="Analytics View" src="https://github.com" />
-</p>
-<p align="center">
-  <img width="336" height="722" alt="Category Management" src="https://github.com" />
-  <img width="334" height="728" alt="Settings Menu" src="https://github.com" />
-  <img width="341" height="718" alt="Add Transaction" src="https://github.com" />
-  <img width="345" height="719" alt="Biometric Prompt" src="https://github.com" />
-</p>
-
 ## Tech Stack
 
 * **Language:** Java
@@ -68,7 +50,7 @@ Follow these steps to set up and run the project locally:
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com
+   git clone https://github.com/WalletSIOPM](https://github.com/kremir-dev/WalletSIOPM
    ```
 2. Open the project in **Android Studio**.
 3. Sync the project with Gradle files and deploy to an emulator or physical device.
@@ -77,10 +59,19 @@ Follow these steps to set up and run the project locally:
 
 To install the application directly onto your device:
 
-1. Navigate to the [Releases](https://github.com) section of this repository.
+1. Navigate to the [Releases](https://github.com/kremir-dev/WalletSIOPM) section of this repository.
+2. Select the target production build.
+3. Download and execute the provided `.apk` asset on your Android device.
+4. Set the appropriate currency as the default in the settings.
 
-2. [![GitHub Release](https://shields.io)](https://github.com)
-[![GitHub Downloads](https://shields.io)](https://github.com)
-[![License: GPL v2](https://shields.io)](https://gnu.org)
-3. Select the target production build.
-4. Download and execute the provided `.apk` asset on your Android device.
+<div align="center">
+  <a href="https://github.com/kremir-dev/WalletSIOPM/releases/latest">
+    <img src="https://img.shields.io/github/v/release/EmirKerem33/Subscription-Tracker?style=flat-square&color=007ec6" alt="Latest Release Badge">
+  </a>
+  <a href="https://github.com/kremir-dev/WalletSIOPM/releases">
+    <img src="https://img.shields.io/github/downloads/EmirKerem33/Subscription-Tracker/total?style=flat-square&color=success" alt="Total Downloads Badge">
+  </a>
+  <a href="https://github.com/kremir-dev/WalletSIOPM/stargazers">
+    <img src="https://img.shields.io/github/stars/kremir-dev/WalletSIOPM?style=flat-square&color=gold" alt="GitHub Stars">
+  </a>
+</div>
