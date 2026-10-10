@@ -1,18 +1,12 @@
-📄 Changelog - v2.1.0 (Pro Release)
-Added
-• Payment Method Tags: Added credit card, debit card, cash, and bank transfer badges/tags for subscriptions and one-off expenses.
-• Real-Time Currency Exchange Rates: Integrated live currency rates fetching via CurrencyExchangeManager with offline caching.
-• Currency Converter Tool: Added a quick currency conversion utility inside Settings.
-• One-off Expenses Tab: Added a dedicated "Expenses" tab in bottom navigation for shopping, transfers, and single expenses.
-• Statistical Bar Chart: Added MPAndroidChart BarChart in Analytics for Income vs Expense comparison.
-• Smart Financial Insights: Added yearly expense projection and AI-inspired savings tips in Analytics.
-• Custom Categories: Enabled users to create and select custom categories dynamically.
-• Brand Logos & Favicons: Integrated Google Favicon API and local vector brand icons for popular subscriptions (Netflix, Spotify, YouTube, etc.).
-• Background Notifications (WorkManager): Configured periodic background worker for automated payment reminders.
-Changed
-• Multi-Currency Normalization: Upgraded analytics and summary calculations to automatically convert all foreign currencies (USD, EUR, GBP) to default currency using live exchange rates.
-• Selection Dialogs: Upgraded single-choice settings and dialogs to use radio buttons (`setSingleChoiceItems`) displaying current selections clearly.
-• Theme Architecture: Refactored layouts to fully support dynamic Light and Dark modes using Material DayNight color attributes.
-Fixed
-• Fixed app exit issue when pressing back from Settings activity.
-• Expanded "Reset All Data" to completely wipe subscriptions, incomes, expenses, and app settings.
+## Release v2.3.0
+
+### New Features and Enhancements
+* **Analytical Reporting:** Integrated a new data table visualizing subscription expenditure via percentage distribution metrics.
+* **Custom Categories:** Extended custom category support to both global search filters and custom budget limit configurations within the settings panel.
+* **Data Mutation Flexibility:** Enabled category modification capabilities directly within the active subscription editing workflow.
+* **UI/UX Optimization:** Redesigned and customized the navigation submenu and updated the application icon asset to align with current branding guidelines.
+
+### Bug Fixes
+* **Routing:** Resolved a critical navigation error preventing user redirection to the application homepage.
+* **Data Synchronization:** Fixed an issue where active budget limits erroneously displayed as "Not set" within the Subscriptions section.
+* **Submenu and Deletion Stability:** Resolved rendering exceptions within the submenu and fixed the failure occurring during subscription removal procedures.
