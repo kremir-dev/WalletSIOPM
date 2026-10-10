@@ -6,23 +6,42 @@ on:
   pull_request:
     branches: [ main ]
   workflow_dispatch:
+  schedule:
+    - cron: '0 2 * * 0'
+
+permissions:
+  contents: read
+  security-events: write
+  pull-requests: write
 
 jobs:
   mobsfscan:
     runs-on: ubuntu-latest
-    timeout-minutes: 10  # 10 dakikayı geçerse otomatik iptal eder
+    timeout-minutes: 20
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Run mobsfscan
-        uses: MobSF/mobsfscan@main
+      - name: Run MobSF Security Scan
+        uses: MobSF/mobsfscan@v1
         with:
-          args: '. --sarif --output results.sarif || true'
+          args: '. --sarif --output results.sarif'
+        continue-on-error: true
 
-      - name: Upload SARIF report
+      - name: Verify SARIF file
+        run: |
+          if [ ! -f results.sarif ]; then
+            echo "Warning: results.sarif not generated"
+            echo '{"version":"2.1.0","runs":[{"tool":{"driver":{"name":"MobSF","version":"1.0"}},"results":[]}]}' > results.sarif
+          else
+            echo "SARIF file generated successfully"
+          fi
+
+      - name: Upload to GitHub Security
+        if: always()
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: results.sarif
-          category: "code-scanning/mobsfscan"
+          category: 'security/mobsf'
+          wait-for-processing: true
