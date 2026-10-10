@@ -1,4 +1,4 @@
-package com.example.subscriptiontracker;
+package com.example.WalletSIOPM;
 
 import android.app.AlertDialog;
 import android.app.TimePickerDialog;
@@ -20,7 +20,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.OnBackPressedCallback;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.content.FileProvider;
 
@@ -29,13 +28,12 @@ import com.google.android.material.card.MaterialCardView;
 import java.io.File;
 import java.io.FileWriter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class SettingsActivity extends AppCompatActivity {
+public class SettingsActivity extends SecureActivity {
 
     private SharedPreferences sharedPreferences;
     private TextView tvReminderDaysSub;
@@ -47,13 +45,13 @@ public class SettingsActivity extends AppCompatActivity {
     private TextView tvCurrencyRatesSub;
 
     private static final String PREFS_NAME = "AppSettings";
-    private static final String KEY_REMINDER_DAYS = "reminder_days";
-    private static final String KEY_REMINDER_HOUR = "reminder_hour";
-    private static final String KEY_REMINDER_MINUTE = "reminder_minute";
-    private static final String KEY_DEFAULT_CURRENCY = "default_currency";
-    public static final String KEY_BUDGET_LIMIT = "budget_limit";
-    public static final String KEY_APP_LOCK_ENABLED = "app_lock_enabled";
-    public static final String KEY_THEME_MODE = "theme_mode"; // 0: System, 1: Light, 2: Dark
+    private static final String PREF_REMINDER_DAYS = "reminder_days";
+    private static final String PREF_REMINDER_HOUR = "reminder_hour";
+    private static final String PREF_REMINDER_MINUTE = "reminder_minute";
+    private static final String PREF_DEFAULT_CURRENCY = "default_currency";
+    public static final String PREF_BUDGET_LIMIT = "budget_limit";
+    public static final String PREF_APP_LOCK_ENABLED = "app_lock_enabled";
+    public static final String PREF_THEME_MODE = "theme_mode"; // 0: System, 1: Light, 2: Dark
 
     private ExecutorService executor = Executors.newSingleThreadExecutor();
 
@@ -131,7 +129,7 @@ public class SettingsActivity extends AppCompatActivity {
         // 2. Hatırlatma Günü Seçimi
         btnReminderDays.setOnClickListener(v -> {
             String[] options = {"Same Day", "1 Day Before", "2 Days Before", "3 Days Before", "1 Week Before"};
-            String current = sharedPreferences.getString(KEY_REMINDER_DAYS, "1 Day Before");
+            String current = sharedPreferences.getString(PREF_REMINDER_DAYS, "1 Day Before");
             int selectedIndex = 1;
             for (int i = 0; i < options.length; i++) {
                 if (options[i].equalsIgnoreCase(current)) {
@@ -143,7 +141,7 @@ public class SettingsActivity extends AppCompatActivity {
             new AlertDialog.Builder(this)
                     .setTitle("Select Default Reminder Day")
                     .setSingleChoiceItems(options, selectedIndex, (dialog, which) -> {
-                        sharedPreferences.edit().putString(KEY_REMINDER_DAYS, options[which]).apply();
+                        sharedPreferences.edit().putString(PREF_REMINDER_DAYS, options[which]).apply();
                         tvReminderDaysSub.setText(options[which]);
                         dialog.dismiss();
                     })
@@ -152,15 +150,15 @@ public class SettingsActivity extends AppCompatActivity {
 
         // 3. Hatırlatma Saati Seçimi
         btnReminderTime.setOnClickListener(v -> {
-            int currentHour = sharedPreferences.getInt(KEY_REMINDER_HOUR, 9);
-            int currentMinute = sharedPreferences.getInt(KEY_REMINDER_MINUTE, 0);
+            int currentHour = sharedPreferences.getInt(PREF_REMINDER_HOUR, 9);
+            int currentMinute = sharedPreferences.getInt(PREF_REMINDER_MINUTE, 0);
 
             TimePickerDialog timePickerDialog = new TimePickerDialog(
                     this,
                     (view, hourOfDay, minute) -> {
                         sharedPreferences.edit()
-                                .putInt(KEY_REMINDER_HOUR, hourOfDay)
-                                .putInt(KEY_REMINDER_MINUTE, minute)
+                                .putInt(PREF_REMINDER_HOUR, hourOfDay)
+                                .putInt(PREF_REMINDER_MINUTE, minute)
                                 .apply();
                         updateTimeSubText(hourOfDay, minute);
                     },
@@ -175,7 +173,7 @@ public class SettingsActivity extends AppCompatActivity {
         btnDefaultCurrency.setOnClickListener(v -> {
             String[] currencyLabels = {"₺ (TRY)", "$ (USD)", "€ (EUR)", "£ (GBP)", "₿ (Bitcoin)", "Ξ (Ethereum)", "USDT", "CAD", "AUD"};
             String[] currencySymbols = {"₺", "$", "€", "£", "₿", "Ξ", "USDT", "CAD", "AUD"};
-            String currentSymbol = sharedPreferences.getString(KEY_DEFAULT_CURRENCY, "₺");
+            String currentSymbol = sharedPreferences.getString(PREF_DEFAULT_CURRENCY, "₺");
             int selectedIndex = 0;
             for (int i = 0; i < currencySymbols.length; i++) {
                 if (currencySymbols[i].equalsIgnoreCase(currentSymbol)) {
@@ -188,7 +186,7 @@ public class SettingsActivity extends AppCompatActivity {
                     .setTitle("Select Default Currency")
                     .setSingleChoiceItems(currencyLabels, selectedIndex, (dialog, which) -> {
                         String selectedSymbol = currencySymbols[which];
-                        sharedPreferences.edit().putString(KEY_DEFAULT_CURRENCY, selectedSymbol).apply();
+                        sharedPreferences.edit().putString(PREF_DEFAULT_CURRENCY, selectedSymbol).apply();
                         tvDefaultCurrencySub.setText(currencyLabels[which]);
                         dialog.dismiss();
                     })
@@ -352,8 +350,8 @@ public class SettingsActivity extends AppCompatActivity {
 
         // 5. Aylık Bütçe Limiti
         btnBudgetLimit.setOnClickListener(v -> {
-            String currSymbol = sharedPreferences.getString(KEY_DEFAULT_CURRENCY, "₺");
-            float currentLimit = sharedPreferences.getFloat(KEY_BUDGET_LIMIT, 0f);
+            String currSymbol = sharedPreferences.getString(PREF_DEFAULT_CURRENCY, "₺");
+            float currentLimit = sharedPreferences.getFloat(PREF_BUDGET_LIMIT, 0f);
 
             EditText input = new EditText(this);
             input.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
@@ -369,7 +367,7 @@ public class SettingsActivity extends AppCompatActivity {
                     .setPositiveButton("Save", (dialog, which) -> {
                         String val = input.getText().toString().trim();
                         float limit = val.isEmpty() ? 0f : Float.parseFloat(val);
-                        sharedPreferences.edit().putFloat(KEY_BUDGET_LIMIT, limit).apply();
+                        sharedPreferences.edit().putFloat(PREF_BUDGET_LIMIT, limit).apply();
 
                         if (limit > 0) {
                             tvBudgetLimitSub.setText(String.format(Locale.getDefault(), "%s%.2f", currSymbol, limit));
@@ -386,16 +384,13 @@ public class SettingsActivity extends AppCompatActivity {
             executor.execute(() -> {
                 AboneDatabase db = AboneDatabase.getInstance(this);
                 List<Abonelik> subs = db.aboneDao().tumunuGetir();
-                List<String> categoryList = new ArrayList<>(Arrays.asList("Music", "Movies & TV", "Software & Cloud", "Gaming", "Other"));
-
+                List<String> existingCategories = new ArrayList<>();
                 if (subs != null) {
                     for (Abonelik sub : subs) {
-                        String cat = sub.getCategory();
-                        if (cat != null && !cat.isEmpty() && !categoryList.contains(cat)) {
-                            categoryList.add(cat);
-                        }
+                        existingCategories.add(sub.getCategory());
                     }
                 }
+                List<String> categoryList = CategoryStore.getCategories(this, existingCategories);
 
                 runOnUiThread(() -> {
                     ScrollView catScroll = new ScrollView(this);
@@ -408,13 +403,13 @@ public class SettingsActivity extends AppCompatActivity {
                     for (int i = 0; i < categoryList.size(); i++) {
                         String catName = categoryList.get(i);
                         TextView tv = new TextView(this);
-                        tv.setText(catName + " Limit (" + sharedPreferences.getString(KEY_DEFAULT_CURRENCY, "₺") + "):");
+                        tv.setText(catName + " Limit (" + sharedPreferences.getString(PREF_DEFAULT_CURRENCY, "₺") + "):");
                         catLayout.addView(tv);
 
                         inputs[i] = new EditText(this);
                         inputs[i].setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
-                        String key = "cat_budget_" + catName.replaceAll("[^a-zA-Z0-9]", "_");
-                        float curVal = sharedPreferences.getFloat(key, 0f);
+                        String preferenceName = "cat_budget_" + catName.replaceAll("[^a-zA-Z0-9]", "_");
+                        float curVal = sharedPreferences.getFloat(preferenceName, 0f);
                         if (curVal > 0) inputs[i].setText(String.valueOf(curVal));
                         catLayout.addView(inputs[i]);
                     }
@@ -426,10 +421,10 @@ public class SettingsActivity extends AppCompatActivity {
                                 SharedPreferences.Editor editor = sharedPreferences.edit();
                                 for (int i = 0; i < categoryList.size(); i++) {
                                     String catName = categoryList.get(i);
-                                    String key = "cat_budget_" + catName.replaceAll("[^a-zA-Z0-9]", "_");
+                                    String preferenceName = "cat_budget_" + catName.replaceAll("[^a-zA-Z0-9]", "_");
                                     String val = inputs[i].getText().toString().trim();
                                     float limit = val.isEmpty() ? 0f : Float.parseFloat(val);
-                                    editor.putFloat(key, limit);
+                                    editor.putFloat(preferenceName, limit);
                                 }
                                 editor.apply();
                                 Toast.makeText(this, "Category budgets saved!", Toast.LENGTH_SHORT).show();
@@ -442,10 +437,10 @@ public class SettingsActivity extends AppCompatActivity {
 
         // 6. Biyometrik / Uygulama Kilidi Aç-Kapa
         btnAppLock.setOnClickListener(v -> {
-            boolean isEnabled = sharedPreferences.getBoolean(KEY_APP_LOCK_ENABLED, false);
+            boolean isEnabled = sharedPreferences.getBoolean(PREF_APP_LOCK_ENABLED, false);
             boolean newState = !isEnabled;
 
-            sharedPreferences.edit().putBoolean(KEY_APP_LOCK_ENABLED, newState).apply();
+            sharedPreferences.edit().putBoolean(PREF_APP_LOCK_ENABLED, newState).apply();
             tvAppLockSub.setText(newState ? "Enabled (Active on launch)" : "Disabled");
             Toast.makeText(this, newState ? "App Lock Enabled" : "App Lock Disabled", Toast.LENGTH_SHORT).show();
         });
@@ -453,12 +448,12 @@ public class SettingsActivity extends AppCompatActivity {
         // 7. Tema Ayarları
         btnThemeSettings.setOnClickListener(v -> {
             String[] themes = {"System Default", "Light Theme", "Dark Theme"};
-            int currentThemeMode = sharedPreferences.getInt(KEY_THEME_MODE, 0);
+            int currentThemeMode = sharedPreferences.getInt(PREF_THEME_MODE, 0);
 
             new AlertDialog.Builder(this)
                     .setTitle("Select Theme")
                     .setSingleChoiceItems(themes, currentThemeMode, (dialog, which) -> {
-                        sharedPreferences.edit().putInt(KEY_THEME_MODE, which).apply();
+                        sharedPreferences.edit().putInt(PREF_THEME_MODE, which).apply();
                         if (which == 1) {
                             tvThemeSub.setText("Light Theme");
                         } else if (which == 2) {
@@ -547,13 +542,13 @@ public class SettingsActivity extends AppCompatActivity {
     }
 
     private void loadSavedSettings() {
-        String days = sharedPreferences.getString(KEY_REMINDER_DAYS, "1 Day Before");
-        int hour = sharedPreferences.getInt(KEY_REMINDER_HOUR, 9);
-        int minute = sharedPreferences.getInt(KEY_REMINDER_MINUTE, 0);
-        String currency = sharedPreferences.getString(KEY_DEFAULT_CURRENCY, "₺");
-        float budgetLimit = sharedPreferences.getFloat(KEY_BUDGET_LIMIT, 0f);
-        boolean appLock = sharedPreferences.getBoolean(KEY_APP_LOCK_ENABLED, false);
-        int themeMode = sharedPreferences.getInt(KEY_THEME_MODE, 0);
+        String days = sharedPreferences.getString(PREF_REMINDER_DAYS, "1 Day Before");
+        int hour = sharedPreferences.getInt(PREF_REMINDER_HOUR, 9);
+        int minute = sharedPreferences.getInt(PREF_REMINDER_MINUTE, 0);
+        String currency = sharedPreferences.getString(PREF_DEFAULT_CURRENCY, "₺");
+        float budgetLimit = sharedPreferences.getFloat(PREF_BUDGET_LIMIT, 0f);
+        boolean appLock = sharedPreferences.getBoolean(PREF_APP_LOCK_ENABLED, false);
+        int themeMode = sharedPreferences.getInt(PREF_THEME_MODE, 0);
 
         tvReminderDaysSub.setText(days);
         updateTimeSubText(hour, minute);

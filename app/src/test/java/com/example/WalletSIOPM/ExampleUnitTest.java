@@ -1,4 +1,4 @@
-package com.example.subscriptiontracker;
+package com.example.WalletSIOPM;
 
 import org.junit.Test;
 

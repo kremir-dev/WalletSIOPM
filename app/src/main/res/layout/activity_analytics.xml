@@ -171,6 +171,38 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
+            <!-- Category expense percentages -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="320dp"
+                android:layout_marginBottom="16dp"
+                app:cardBackgroundColor="@color/bg_card"
+                app:cardCornerRadius="12dp"
+                app:strokeColor="@color/divider"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Expense Percentage by Category"
+                        android:textColor="@color/text_primary"
+                        android:textSize="14sp"
+                        android:fontFamily="sans-serif-bold"
+                        android:layout_marginBottom="8dp"/>
+
+                    <com.github.mikephil.charting.charts.PieChart
+                        android:id="@+id/pieChartPercentage"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
             <!-- Çubuk Grafik (BarChart - Income vs Expense & Payment Methods) -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
@@ -238,14 +270,10 @@
         </LinearLayout>
     </ScrollView>
 
-    <!-- Alt Menü -->
-    <com.google.android.material.bottomnavigation.BottomNavigationView
-        android:id="@+id/bottomNavigationView"
+    <!-- Navigation -->
+    <include
+        layout="@layout/bottom_nav_include"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/bg_card"
-        app:itemIconTint="@color/text_secondary"
-        app:itemTextColor="@color/text_secondary"
-        app:menu="@menu/bottom_nav_menu" />
+        android:layout_height="wrap_content" />
 
 </LinearLayout>

@@ -1,4 +1,4 @@
-package com.example.subscriptiontracker;
+package com.example.WalletSIOPM;
 
 import android.app.AlertDialog;
 import android.app.DatePickerDialog;
@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
@@ -14,14 +15,11 @@ import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
 import androidx.activity.OnBackPressedCallback;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
-import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -30,7 +28,7 @@ import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class ExpenseActivity extends AppCompatActivity {
+public class ExpenseActivity extends SecureActivity {
 
     private AboneDatabase db;
     private ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -44,7 +42,7 @@ public class ExpenseActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
         SharedPreferences prefs = getSharedPreferences("AppSettings", Context.MODE_PRIVATE);
-        int themeMode = prefs.getInt(SettingsActivity.KEY_THEME_MODE, 0);
+        int themeMode = prefs.getInt(SettingsActivity.PREF_THEME_MODE, 0);
         SettingsActivity.applyTheme(themeMode);
 
         EdgeToEdge.enable(this);
@@ -84,33 +82,7 @@ public class ExpenseActivity extends AppCompatActivity {
     }
 
     private void setupBottomNav() {
-        BottomNavigationView bottomNavigationView = findViewById(R.id.bottomNavigationView);
-        if (bottomNavigationView != null) {
-            bottomNavigationView.setSelectedItemId(R.id.nav_expenses);
-            bottomNavigationView.setOnItemSelectedListener(item -> {
-                int id = item.getItemId();
-                if (id == R.id.nav_subscriptions) {
-                    startActivity(new Intent(this, MainActivity.class));
-                    finish();
-                    return true;
-                } else if (id == R.id.nav_expenses) {
-                    return true;
-                } else if (id == R.id.nav_income) {
-                    startActivity(new Intent(this, IncomeActivity.class));
-                    finish();
-                    return true;
-                } else if (id == R.id.nav_analytics) {
-                    startActivity(new Intent(this, AnalyticsActivity.class));
-                    finish();
-                    return true;
-                } else if (id == R.id.nav_settings) {
-                    startActivity(new Intent(this, SettingsActivity.class));
-                    finish();
-                    return true;
-                }
-                return false;
-            });
-        }
+        NavigationHelper.setup(this, R.id.nav_expenses);
     }
 
     private void loadExpenses() {
@@ -298,10 +270,7 @@ public class ExpenseActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        BottomNavigationView bottomNavigationView = findViewById(R.id.bottomNavigationView);
-        if (bottomNavigationView != null) {
-            bottomNavigationView.setSelectedItemId(R.id.nav_expenses);
-        }
+        NavigationHelper.setup(this, R.id.nav_expenses);
         loadExpenses();
     }
 

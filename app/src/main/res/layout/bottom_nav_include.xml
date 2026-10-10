@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/bottomNavigationView"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/bg_card"
+    android:orientation="vertical"
+    android:paddingTop="8dp"
+    android:paddingBottom="12dp"
+    android:elevation="6dp">
+
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fillViewport="true"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:paddingHorizontal="12dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/nav_subscriptions"
+                style="@style/Widget.MaterialComponents.Button"
+                android:layout_width="wrap_content"
+                android:layout_height="42dp"
+                android:layout_marginEnd="8dp"
+                android:backgroundTint="@color/bg_card"
+                android:paddingHorizontal="16dp"
+                android:text="Subscriptions"
+                android:textAllCaps="false"
+                android:textColor="@color/text_primary"
+                app:cornerRadius="18dp"
+                app:icon="@drawable/ic_nav_subscriptions"
+                app:iconGravity="textStart"
+                app:iconPadding="8dp"
+                app:iconSize="18dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/nav_expenses"
+                style="@style/Widget.MaterialComponents.Button"
+                android:layout_width="wrap_content"
+                android:layout_height="42dp"
+                android:layout_marginEnd="8dp"
+                android:backgroundTint="@color/bg_card"
+                android:paddingHorizontal="16dp"
+                android:text="Expenses"
+                android:textAllCaps="false"
+                android:textColor="@color/text_primary"
+                app:cornerRadius="18dp"
+                app:icon="@drawable/ic_nav_expenses"
+                app:iconGravity="textStart"
+                app:iconPadding="8dp"
+                app:iconSize="18dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/nav_income"
+                style="@style/Widget.MaterialComponents.Button"
+                android:layout_width="wrap_content"
+                android:layout_height="42dp"
+                android:layout_marginEnd="8dp"
+                android:backgroundTint="@color/bg_card"
+                android:paddingHorizontal="16dp"
+                android:text="Income"
+                android:textAllCaps="false"
+                android:textColor="@color/text_primary"
+                app:cornerRadius="18dp"
+                app:icon="@drawable/ic_nav_income"
+                app:iconGravity="textStart"
+                app:iconPadding="8dp"
+                app:iconSize="18dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/nav_analytics"
+                style="@style/Widget.MaterialComponents.Button"
+                android:layout_width="wrap_content"
+                android:layout_height="42dp"
+                android:layout_marginEnd="8dp"
+                android:backgroundTint="@color/bg_card"
+                android:paddingHorizontal="16dp"
+                android:text="Analytics"
+                android:textAllCaps="false"
+                android:textColor="@color/text_primary"
+                app:cornerRadius="18dp"
+                app:icon="@drawable/ic_nav_analytics"
+                app:iconGravity="textStart"
+                app:iconPadding="8dp"
+                app:iconSize="18dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/nav_settings"
+                style="@style/Widget.MaterialComponents.Button"
+                android:layout_width="wrap_content"
+                android:layout_height="42dp"
+                android:backgroundTint="@color/bg_card"
+                android:paddingHorizontal="16dp"
+                android:text="Settings"
+                android:textAllCaps="false"
+                android:textColor="@color/text_primary"
+                app:cornerRadius="18dp"
+                app:icon="@drawable/ic_nav_settings"
+                app:iconGravity="textStart"
+                app:iconPadding="8dp"
+                app:iconSize="18dp" />
+        </LinearLayout>
+    </HorizontalScrollView>
+</LinearLayout>

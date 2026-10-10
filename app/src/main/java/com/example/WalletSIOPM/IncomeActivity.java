@@ -1,4 +1,4 @@
-package com.example.subscriptiontracker;
+package com.example.WalletSIOPM;
 
 import android.app.AlertDialog;
 import android.app.DatePickerDialog;
@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
@@ -14,14 +15,11 @@ import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
 import androidx.activity.OnBackPressedCallback;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
-import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -31,7 +29,7 @@ import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class IncomeActivity extends AppCompatActivity {
+public class IncomeActivity extends SecureActivity {
 
     private AboneDatabase db;
     private ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -40,12 +38,14 @@ public class IncomeActivity extends AppCompatActivity {
     private RecyclerView rvTransactions;
     private TextView tvTotalBalance;
 
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         SharedPreferences prefs = getSharedPreferences("AppSettings", Context.MODE_PRIVATE);
-        int themeMode = prefs.getInt(SettingsActivity.KEY_THEME_MODE, 0);
+        int themeMode = prefs.getInt(SettingsActivity.PREF_THEME_MODE, 0);
         SettingsActivity.applyTheme(themeMode);
 
         EdgeToEdge.enable(this);
@@ -84,77 +84,65 @@ public class IncomeActivity extends AppCompatActivity {
         loadTransactions();
     }
 
+
+
     private void setupBottomNav() {
-        BottomNavigationView bottomNavigationView = findViewById(R.id.bottomNavigationView);
-        bottomNavigationView.setSelectedItemId(R.id.nav_income);
-        bottomNavigationView.setOnItemSelectedListener(item -> {
-            int id = item.getItemId();
-            if (id == R.id.nav_subscriptions) {
-                startActivity(new Intent(this, MainActivity.class));
-                finish();
-                return true;
-            } else if (id == R.id.nav_income) {
-                return true;
-            } else if (id == R.id.nav_expenses) {
-                startActivity(new Intent(this, ExpenseActivity.class));
-                finish();
-                return true;
-            } else if (id == R.id.nav_analytics) {
-                startActivity(new Intent(this, AnalyticsActivity.class));
-                finish();
-                return true;
-            } else if (id == R.id.nav_settings) {
-                startActivity(new Intent(this, SettingsActivity.class));
-                return true;
-            }
-            return false;
-        });
+        NavigationHelper.setup(this, R.id.nav_income);
     }
+
+
 
     private void loadTransactions() {
         executor.execute(() -> {
             List<Income> incomes = db.incomeDao().tumGelirleriGetir();
-            List<Abonelik> subs = db.aboneDao().tumunuGetir();
 
-            List<TransactionItem> combinedList = new ArrayList<>();
-
+            List<TransactionItem> incomeItems = new ArrayList<>();
             double totalIncome = 0.0;
-            double totalExpense = 0.0;
+
+            SharedPreferences prefs = getSharedPreferences("AppSettings", Context.MODE_PRIVATE);
+            String defaultCurrency = prefs.getString("default_currency", "₺");
 
             if (incomes != null) {
                 for (Income inc : incomes) {
-                    combinedList.add(new TransactionItem(inc.getId(), inc.getTitle(), inc.getAmount(), inc.getCurrency(), inc.getDate(), "INCOME"));
+                    incomeItems.add(new TransactionItem(inc.getId(), inc.getTitle(), inc.getAmount(), inc.getCurrency(), inc.getDate(), "INCOME"));
                     try {
-                        totalIncome += Double.parseDouble(inc.getAmount().replace(",", "."));
+                        double amount = Double.parseDouble(inc.getAmount().replace(",", "."));
+                        String incCurr = inc.getCurrency() != null ? inc.getCurrency() : "₺";
+                        totalIncome += convertCurrency(amount, incCurr, defaultCurrency);
                     } catch (Exception ignored) {}
                 }
             }
 
-            if (subs != null) {
-                for (Abonelik sub : subs) {
-                    combinedList.add(new TransactionItem(sub.getId(), sub.getName(), sub.getAmount(), sub.getCurrency(), sub.getDate(), "EXPENSE"));
-                    try {
-                        totalExpense += Double.parseDouble(sub.getAmount().replace(",", "."));
-                    } catch (Exception ignored) {}
-                }
-            }
+            Collections.sort(incomeItems);
 
-            Collections.sort(combinedList);
-
-            SharedPreferences prefs = getSharedPreferences("AppSettings", Context.MODE_PRIVATE);
-            String currency = prefs.getString("default_currency", "₺");
-            double netBalance = totalIncome - totalExpense;
+            final double finalTotalIncome = totalIncome;
 
             runOnUiThread(() -> {
                 transactionList.clear();
-                transactionList.addAll(combinedList);
+                transactionList.addAll(incomeItems);
                 adapter.notifyDataSetChanged();
 
                 if (tvTotalBalance != null) {
-                    tvTotalBalance.setText(String.format(Locale.getDefault(), "%s%.2f", currency, netBalance));
+                    tvTotalBalance.setText(String.format(Locale.getDefault(), "%s%.2f", defaultCurrency, finalTotalTotalIncomeFix(finalTotalIncome)));
                 }
             });
         });
+    }
+
+    private double finalTotalTotalIncomeFix(double val) {
+        return val;
+    }
+
+    private double convertCurrency(double amount, String fromCurrency, String toCurrency) {
+        if (fromCurrency == null || fromCurrency.isEmpty()) fromCurrency = "₺";
+        if (toCurrency == null || toCurrency.isEmpty()) toCurrency = "₺";
+
+        if (fromCurrency.equals(toCurrency)) return amount;
+
+        double fromRate = CurrencyExchangeManager.getRateToTRY(this, fromCurrency);
+        double toRate = CurrencyExchangeManager.getRateToTRY(this, toCurrency);
+
+        return (amount * fromRate) / toRate;
     }
 
     private void showAddIncomeDialog() {
@@ -241,10 +229,15 @@ public class IncomeActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        BottomNavigationView bottomNavigationView = findViewById(R.id.bottomNavigationView);
-        if (bottomNavigationView != null) {
-            bottomNavigationView.setSelectedItemId(R.id.nav_income);
-        }
+        NavigationHelper.setup(this, R.id.nav_income);
         loadTransactions();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (executor != null && !executor.isShutdown()) {
+            executor.shutdown();
+        }
     }
 }

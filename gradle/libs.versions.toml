@@ -21,4 +21,3 @@ recyclerview = { group = "androidx.recyclerview", name = "recyclerview", version
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
-

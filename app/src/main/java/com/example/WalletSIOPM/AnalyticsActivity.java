@@ -1,15 +1,19 @@
-package com.example.subscriptiontracker;
+package com.example.WalletSIOPM;
 
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.TextView;
 
+import androidx.activity.EdgeToEdge;
 import androidx.activity.OnBackPressedCallback;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 import com.github.mikephil.charting.charts.BarChart;
 import com.github.mikephil.charting.charts.LineChart;
@@ -23,22 +27,23 @@ import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.data.PieData;
 import com.github.mikephil.charting.data.PieDataSet;
 import com.github.mikephil.charting.data.PieEntry;
+import com.github.mikephil.charting.formatter.PercentFormatter;
 import com.github.mikephil.charting.formatter.ValueFormatter;
 import com.github.mikephil.charting.utils.ColorTemplate;
-import com.google.android.material.bottomnavigation.BottomNavigationView;
-
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class AnalyticsActivity extends AppCompatActivity {
+public class AnalyticsActivity extends SecureActivity {
 
     private AboneDatabase db;
     private ExecutorService executor = Executors.newSingleThreadExecutor();
     private TextView tvAnalyticsIncome, tvAnalyticsExpense, tvSmartInsight;
-    private PieChart pieChart;
+    private PieChart pieChart, pieChartPercentage;
     private BarChart barChart;
     private LineChart lineChart;
 
@@ -47,10 +52,17 @@ public class AnalyticsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
         SharedPreferences prefs = getSharedPreferences("AppSettings", Context.MODE_PRIVATE);
-        int themeMode = prefs.getInt(SettingsActivity.KEY_THEME_MODE, 0);
+        int themeMode = prefs.getInt(SettingsActivity.PREF_THEME_MODE, 0);
         SettingsActivity.applyTheme(themeMode);
 
+        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_analytics);
+
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.mainAnalytics), (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            return insets;
+        });
 
         db = AboneDatabase.getInstance(this);
 
@@ -58,6 +70,7 @@ public class AnalyticsActivity extends AppCompatActivity {
         tvAnalyticsExpense = findViewById(R.id.tvAnalyticsExpense);
         tvSmartInsight = findViewById(R.id.tvSmartInsight);
         pieChart = findViewById(R.id.pieChart);
+        pieChartPercentage = findViewById(R.id.pieChartPercentage);
         barChart = findViewById(R.id.barChart);
         lineChart = findViewById(R.id.lineChart);
 
@@ -77,31 +90,7 @@ public class AnalyticsActivity extends AppCompatActivity {
     }
 
     private void setupBottomNav() {
-        BottomNavigationView bottomNavigationView = findViewById(R.id.bottomNavigationView);
-        bottomNavigationView.setSelectedItemId(R.id.nav_analytics);
-        bottomNavigationView.setOnItemSelectedListener(item -> {
-            int id = item.getItemId();
-            if (id == R.id.nav_subscriptions) {
-                startActivity(new Intent(this, MainActivity.class));
-                finish();
-                return true;
-            } else if (id == R.id.nav_expenses) {
-                startActivity(new Intent(this, ExpenseActivity.class));
-                finish();
-                return true;
-            } else if (id == R.id.nav_income) {
-                startActivity(new Intent(this, IncomeActivity.class));
-                finish();
-                return true;
-            } else if (id == R.id.nav_analytics) {
-                return true;
-            } else if (id == R.id.nav_settings) {
-                startActivity(new Intent(this, SettingsActivity.class));
-                finish();
-                return true;
-            }
-            return false;
-        });
+        NavigationHelper.setup(this, R.id.nav_analytics);
     }
 
     private void loadFinancialData() {
@@ -125,7 +114,7 @@ public class AnalyticsActivity extends AppCompatActivity {
             }
 
             double totalExpense = 0.0;
-            float music = 0, movies = 0, software = 0, gaming = 0, other = 0;
+            Map<String, Double> categoryMap = new HashMap<>();
 
             if (subs != null) {
                 for (Abonelik sub : subs) {
@@ -135,12 +124,8 @@ public class AnalyticsActivity extends AppCompatActivity {
                         double convertedAmount = convertCurrency(amount, subCurr, defaultCurrency);
                         totalExpense += convertedAmount;
 
-                        String cat = sub.getCategory() != null ? sub.getCategory() : "Other";
-                        if (cat.contains("Music")) music += convertedAmount;
-                        else if (cat.contains("Movie") || cat.contains("TV")) movies += convertedAmount;
-                        else if (cat.contains("Software") || cat.contains("Cloud")) software += convertedAmount;
-                        else if (cat.contains("Gaming")) gaming += convertedAmount;
-                        else other += convertedAmount;
+                        String cat = (sub.getCategory() != null && !sub.getCategory().isEmpty()) ? sub.getCategory() : "Other";
+                        categoryMap.put(cat, categoryMap.getOrDefault(cat, 0.0) + convertedAmount);
                     } catch (Exception ignored) {}
                 }
             }
@@ -152,7 +137,9 @@ public class AnalyticsActivity extends AppCompatActivity {
                         String expCurr = exp.getCurrency() != null ? exp.getCurrency() : "₺";
                         double convertedAmount = convertCurrency(amount, expCurr, defaultCurrency);
                         totalExpense += convertedAmount;
-                        other += convertedAmount;
+
+                        String cat = (exp.getCategory() != null && !exp.getCategory().isEmpty()) ? exp.getCategory() : "Other";
+                        categoryMap.put(cat, categoryMap.getOrDefault(cat, 0.0) + convertedAmount);
                     } catch (Exception ignored) {}
                 }
             }
@@ -163,7 +150,7 @@ public class AnalyticsActivity extends AppCompatActivity {
 
             String savingsTip;
             if (finalExpense == 0) {
-                savingsTip = "You have no active expenses recorded. Add subscriptions to get AI-powered financial insights!";
+                savingsTip = "You have no active expenses recorded. Add subscriptions or expenses to get AI-powered financial insights!";
             } else if (finalIncome > finalExpense) {
                 savingsTip = String.format(Locale.getDefault(),
                         "📊 Yearly Projection: Your annual spending is projected at %.2f %s.\n\nGreat job! Your income exceeds your expenses. You are saving %.2f %s monthly.",
@@ -175,17 +162,22 @@ public class AnalyticsActivity extends AppCompatActivity {
             }
 
             List<PieEntry> entries = new ArrayList<>();
-            if (music > 0) entries.add(new PieEntry(music, "Music"));
-            if (movies > 0) entries.add(new PieEntry(movies, "Movies & TV"));
-            if (software > 0) entries.add(new PieEntry(software, "Software"));
-            if (gaming > 0) entries.add(new PieEntry(gaming, "Gaming"));
-            if (other > 0 || entries.isEmpty()) entries.add(new PieEntry(other > 0 ? other : 1f, "Other / One-off"));
+            for (Map.Entry<String, Double> entry : categoryMap.entrySet()) {
+                double amount = entry.getValue();
+                if (Double.isFinite(amount) && amount > 0.0 && amount <= Float.MAX_VALUE) {
+                    entries.add(new PieEntry((float) amount, entry.getKey()));
+                }
+            }
+            if (entries.isEmpty()) {
+                entries.add(new PieEntry(1f, "No Expenses"));
+            }
 
             runOnUiThread(() -> {
                 tvAnalyticsIncome.setText(String.format(Locale.getDefault(), "%s%.2f", defaultCurrency, finalIncome));
                 tvAnalyticsExpense.setText(String.format(Locale.getDefault(), "%s%.2f", currencySymbolFix(defaultCurrency), finalExpense));
                 tvSmartInsight.setText(savingsTip);
                 setupPieChart(entries, defaultCurrency);
+                setupPercentagePieChart(entries);
                 setupBarChart(finalIncome, finalExpense, defaultCurrency);
                 setupLineChart(finalExpense, defaultCurrency);
             });
@@ -211,18 +203,14 @@ public class AnalyticsActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        BottomNavigationView bottomNavigationView = findViewById(R.id.bottomNavigationView);
-        if (bottomNavigationView != null) {
-            bottomNavigationView.setSelectedItemId(R.id.nav_analytics);
-        }
+        NavigationHelper.setup(this, R.id.nav_analytics);
         loadFinancialData();
     }
 
     private void setupPieChart(List<PieEntry> entries, String currency) {
         PieDataSet dataSet = new PieDataSet(entries, "Categories");
         dataSet.setColors(ColorTemplate.MATERIAL_COLORS);
-        dataSet.setValueTextColor(Color.WHITE);
-        dataSet.setValueTextSize(13f);
+        configurePieDataLabels(dataSet);
         dataSet.setValueFormatter(new ValueFormatter() {
             @Override
             public String getFormattedValue(float value) {
@@ -237,8 +225,46 @@ public class AnalyticsActivity extends AppCompatActivity {
         pieChart.setCenterTextColor(ContextCompat.getColor(this, R.color.text_primary));
         pieChart.setHoleColor(ContextCompat.getColor(this, R.color.bg_card));
         pieChart.setTransparentCircleColor(ContextCompat.getColor(this, R.color.divider));
+        pieChart.setDrawEntryLabels(false);
         pieChart.getLegend().setTextColor(ContextCompat.getColor(this, R.color.text_primary));
         pieChart.invalidate();
+    }
+
+    private void setupPercentagePieChart(List<PieEntry> entries) {
+        pieChartPercentage.getDescription().setEnabled(false);
+        pieChartPercentage.setCenterTextColor(ContextCompat.getColor(this, R.color.text_primary));
+        pieChartPercentage.setHoleColor(ContextCompat.getColor(this, R.color.bg_card));
+        pieChartPercentage.setTransparentCircleColor(ContextCompat.getColor(this, R.color.divider));
+        pieChartPercentage.getLegend().setTextColor(ContextCompat.getColor(this, R.color.text_primary));
+        if (entries.size() == 1 && "No Expenses".equals(entries.get(0).getLabel())) {
+            pieChartPercentage.clear();
+            pieChartPercentage.setCenterText("No Expenses");
+            pieChartPercentage.invalidate();
+            return;
+        }
+
+        PieDataSet dataSet = new PieDataSet(entries, "Categories");
+        dataSet.setColors(ColorTemplate.MATERIAL_COLORS);
+        configurePieDataLabels(dataSet);
+
+        PieData data = new PieData(dataSet);
+        pieChartPercentage.setData(data);
+        pieChartPercentage.setUsePercentValues(true);
+        dataSet.setValueFormatter(new PercentFormatter(pieChartPercentage));
+        pieChartPercentage.setCenterText("Expense\nPercentage");
+        pieChartPercentage.setDrawEntryLabels(false);
+        pieChartPercentage.invalidate();
+    }
+
+    private void configurePieDataLabels(PieDataSet dataSet) {
+        dataSet.setYValuePosition(PieDataSet.ValuePosition.OUTSIDE_SLICE);
+        dataSet.setValueTextColor(ContextCompat.getColor(this, R.color.text_primary));
+        dataSet.setValueTextSize(12f);
+        dataSet.setValueLineColor(ContextCompat.getColor(this, R.color.text_secondary));
+        dataSet.setValueLineWidth(1f);
+        dataSet.setValueLinePart1Length(0.3f);
+        dataSet.setValueLinePart2Length(0.4f);
+        dataSet.setValueLinePart1OffsetPercentage(80f);
     }
 
     private void setupBarChart(double income, double expense, String currency) {

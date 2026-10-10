@@ -1,4 +1,4 @@
-package com.example.subscriptiontracker;
+package com.example.WalletSIOPM;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;

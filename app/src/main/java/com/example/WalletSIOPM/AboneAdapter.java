@@ -1,4 +1,4 @@
-package com.example.subscriptiontracker;
+package com.example.WalletSIOPM;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -22,8 +22,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
@@ -298,13 +298,9 @@ public class AboneAdapter extends RecyclerView.Adapter<AboneAdapter.AboneViewHol
         etCategory.setFocusable(false);
         etCategory.setClickable(true);
 
-        List<String> categoryList = new ArrayList<>(Arrays.asList(
-                "Music", "Movies & TV", "Software & Cloud", "Gaming",
-                "Education & Books", "Sports & Fitness", "Other"
-        ));
-        if (!categoryList.contains(subscription.getCategory()) && subscription.getCategory() != null) {
-            categoryList.add(subscription.getCategory());
-        }
+        List<String> categoryList = CategoryStore.getCategories(
+                context, Collections.singletonList(subscription.getCategory()));
+        categoryList.add("➕ Add Custom Category...");
 
         etCategory.setOnClickListener(v -> {
             String[] categoryOptions = categoryList.toArray(new String[0]);
@@ -328,7 +324,17 @@ public class AboneAdapter extends RecyclerView.Adapter<AboneAdapter.AboneViewHol
                                     .setPositiveButton("Add", (d, w) -> {
                                         String newCat = customInput.getText().toString().trim();
                                         if (!newCat.isEmpty()) {
-                                            categoryList.add(categoryList.size() - 1, newCat);
+                                            CategoryStore.addCategory(context, newCat);
+                                            boolean categoryExists = false;
+                                            for (String existingCategory : categoryList) {
+                                                if (existingCategory.equalsIgnoreCase(newCat)) {
+                                                    categoryExists = true;
+                                                    break;
+                                                }
+                                            }
+                                            if (!categoryExists) {
+                                                categoryList.add(categoryList.size() - 1, newCat);
+                                            }
                                             etCategory.setText(newCat);
                                         }
                                     })
@@ -341,9 +347,6 @@ public class AboneAdapter extends RecyclerView.Adapter<AboneAdapter.AboneViewHol
                     .show();
         });
         dialogLayout.addView(etCategory);
-        if (!categoryList.contains("➕ Add Custom Category...")) {
-            categoryList.add("➕ Add Custom Category...");
-        }
 
         // Ödeme Periyodu Seçimi
         EditText etBillingCycle = new EditText(context);
@@ -387,6 +390,7 @@ public class AboneAdapter extends RecyclerView.Adapter<AboneAdapter.AboneViewHol
                     subscription.setPaymentMethod(etPaymentMethod.getText().toString());
                     subscription.setDate(etDate.getText().toString());
                     subscription.setCategory(etCategory.getText().toString());
+                    CategoryStore.addCategory(context, subscription.getCategory());
                     subscription.setBillingCycle(etBillingCycle.getText().toString());
                     subscription.setNotes(etNotes.getText().toString());
 

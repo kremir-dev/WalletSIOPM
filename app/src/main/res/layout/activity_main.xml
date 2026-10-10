@@ -171,8 +171,76 @@
             <HorizontalScrollView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
                 android:layout_marginBottom="12dp"
+                android:paddingHorizontal="12dp"
+                android:scrollbars="none">
+
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/chipGroupPayment"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:singleLine="true"
+                    app:singleSelection="true">
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipPaymentAll"
+                        style="@style/Widget.MaterialComponents.Chip.Choice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="true"
+                        android:text="All Methods"
+                        android:textColor="@color/text_primary"
+                        app:chipBackgroundColor="@color/bg_card"
+                        app:chipStrokeColor="@color/divider"
+                        app:chipStrokeWidth="1dp" />
+
+                    <com.google.android.material.chip.Chip
+                        style="@style/Widget.MaterialComponents.Chip.Choice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Credit Card"
+                        android:textColor="@color/text_primary"
+                        app:chipBackgroundColor="@color/bg_card"
+                        app:chipStrokeColor="@color/divider"
+                        app:chipStrokeWidth="1dp" />
+
+                    <com.google.android.material.chip.Chip
+                        style="@style/Widget.MaterialComponents.Chip.Choice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Debit Card"
+                        android:textColor="@color/text_primary"
+                        app:chipBackgroundColor="@color/bg_card"
+                        app:chipStrokeColor="@color/divider"
+                        app:chipStrokeWidth="1dp" />
+
+                    <com.google.android.material.chip.Chip
+                        style="@style/Widget.MaterialComponents.Chip.Choice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Cash"
+                        android:textColor="@color/text_primary"
+                        app:chipBackgroundColor="@color/bg_card"
+                        app:chipStrokeColor="@color/divider"
+                        app:chipStrokeWidth="1dp" />
+
+                    <com.google.android.material.chip.Chip
+                        style="@style/Widget.MaterialComponents.Chip.Choice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Bank Transfer"
+                        android:textColor="@color/text_primary"
+                        app:chipBackgroundColor="@color/bg_card"
+                        app:chipStrokeColor="@color/divider"
+                        app:chipStrokeWidth="1dp" />
+                </com.google.android.material.chip.ChipGroup>
+            </HorizontalScrollView>
+
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="6dp"
                 android:paddingHorizontal="12dp"
                 android:scrollbars="none">
 
@@ -253,73 +321,6 @@
             </HorizontalScrollView>
 
             <!-- ÖDEME YÖNTEMİ CHIP'LERİ (Yatay Kaydırılabilir) -->
-            <HorizontalScrollView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
-                android:paddingHorizontal="12dp"
-                android:scrollbars="none">
-
-                <com.google.android.material.chip.ChipGroup
-                    android:id="@+id/chipGroupPayment"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    app:singleLine="true"
-                    app:singleSelection="true">
-
-                    <com.google.android.material.chip.Chip
-                        android:id="@+id/chipPaymentAll"
-                        style="@style/Widget.MaterialComponents.Chip.Choice"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:checked="true"
-                        android:text="All Methods"
-                        android:textColor="@color/text_primary"
-                        app:chipBackgroundColor="@color/bg_card"
-                        app:chipStrokeColor="@color/divider"
-                        app:chipStrokeWidth="1dp" />
-
-                    <com.google.android.material.chip.Chip
-                        style="@style/Widget.MaterialComponents.Chip.Choice"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Credit Card"
-                        android:textColor="@color/text_primary"
-                        app:chipBackgroundColor="@color/bg_card"
-                        app:chipStrokeColor="@color/divider"
-                        app:chipStrokeWidth="1dp" />
-
-                    <com.google.android.material.chip.Chip
-                        style="@style/Widget.MaterialComponents.Chip.Choice"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Debit Card"
-                        android:textColor="@color/text_primary"
-                        app:chipBackgroundColor="@color/bg_card"
-                        app:chipStrokeColor="@color/divider"
-                        app:chipStrokeWidth="1dp" />
-
-                    <com.google.android.material.chip.Chip
-                        style="@style/Widget.MaterialComponents.Chip.Choice"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Cash"
-                        android:textColor="@color/text_primary"
-                        app:chipBackgroundColor="@color/bg_card"
-                        app:chipStrokeColor="@color/divider"
-                        app:chipStrokeWidth="1dp" />
-
-                    <com.google.android.material.chip.Chip
-                        style="@style/Widget.MaterialComponents.Chip.Choice"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Bank Transfer"
-                        android:textColor="@color/text_primary"
-                        app:chipBackgroundColor="@color/bg_card"
-                        app:chipStrokeColor="@color/divider"
-                        app:chipStrokeWidth="1dp" />
-                </com.google.android.material.chip.ChipGroup>
-            </HorizontalScrollView>
 
             <!-- Abonelik Listesi -->
             <androidx.recyclerview.widget.RecyclerView
@@ -331,14 +332,10 @@
         </LinearLayout>
     </ScrollView>
 
-    <!-- Bottom Navigation -->
-    <com.google.android.material.bottomnavigation.BottomNavigationView
-        android:id="@+id/bottomNavigationView"
+    <!-- Navigation -->
+    <include
+        layout="@layout/bottom_nav_include"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/bg_card"
-        app:itemIconTint="@color/text_secondary"
-        app:itemTextColor="@color/text_secondary"
-        app:menu="@menu/bottom_nav_menu" />
+        android:layout_height="wrap_content" />
 
 </LinearLayout>

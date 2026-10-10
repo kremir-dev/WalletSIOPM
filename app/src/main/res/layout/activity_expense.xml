@@ -92,14 +92,10 @@
         </LinearLayout>
     </ScrollView>
 
-    <!-- Alt Menü -->
-    <com.google.android.material.bottomnavigation.BottomNavigationView
-        android:id="@+id/bottomNavigationView"
+    <!-- Navigation -->
+    <include
+        layout="@layout/bottom_nav_include"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/bg_card"
-        app:itemIconTint="@color/text_secondary"
-        app:itemTextColor="@color/text_secondary"
-        app:menu="@menu/bottom_nav_menu" />
+        android:layout_height="wrap_content" />
 
 </LinearLayout>

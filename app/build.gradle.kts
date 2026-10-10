@@ -3,7 +3,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.subscriptiontracker"
+    namespace = "com.example.WalletSIOPM"
     compileSdk {
         version = release(37)
     }
@@ -12,8 +12,8 @@ android {
         applicationId = "com.example.subscriptiontracker"
         minSdk = 24
         targetSdk = 37
-        versionCode = 4
-        versionName = "2.2.0"
+        versionCode = 6
+        versionName = "2.3.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

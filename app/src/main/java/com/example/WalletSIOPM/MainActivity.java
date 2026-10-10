@@ -1,4 +1,4 @@
-package com.example.subscriptiontracker;
+package com.example.WalletSIOPM;
 
 import android.Manifest;
 import android.app.AlertDialog;
@@ -24,7 +24,6 @@ import android.widget.TextView;
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.app.AppCompatDelegate;
 import androidx.biometric.BiometricPrompt;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
@@ -36,17 +35,13 @@ import androidx.work.ExistingPeriodicWorkPolicy;
 import androidx.work.PeriodicWorkRequest;
 import androidx.work.WorkManager;
 
-import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.Executor;
@@ -54,7 +49,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends BaseActivity {
 
     private AboneDatabase db;
     private ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -77,13 +72,56 @@ public class MainActivity extends AppCompatActivity {
     private void loadData() {
         executor.execute(() -> {
             List<Abonelik> fetchedList = db.aboneDao().tumunuGetir();
+            for (Abonelik subscription : fetchedList) {
+                CategoryStore.addCategory(this, subscription.getCategory());
+            }
             runOnUiThread(() -> {
                 allSubscriptionList.clear();
                 allSubscriptionList.addAll(fetchedList);
+                updateCategoryChips();
                 applyFilterAndSort();
                 updateSummaryCard(fetchedList);
             });
         });
+    }
+
+    private void updateCategoryChips() {
+        if (chipGroupCategory == null) return;
+
+        List<String> defaultCats = Arrays.asList("All", "Music", "Movies & TV", "Software & Cloud", "Gaming", "Other");
+
+        for (Abonelik sub : allSubscriptionList) {
+            String cat = sub.getCategory();
+            if (cat != null && !cat.trim().isEmpty() && !defaultCats.contains(cat.trim())) {
+                addCategoryFilterChip(cat);
+            }
+        }
+        for (String category : CategoryStore.getCategories(this)) {
+            if (!defaultCats.contains(category)) {
+                addCategoryFilterChip(category);
+            }
+        }
+    }
+
+    private void addCategoryFilterChip(String category) {
+        for (int i = 0; i < chipGroupCategory.getChildCount(); i++) {
+            View child = chipGroupCategory.getChildAt(i);
+            if (child instanceof Chip
+                    && ((Chip) child).getText().toString().equalsIgnoreCase(category)) {
+                return;
+            }
+        }
+
+        Chip chip = new Chip(this, null, com.google.android.material.R.style.Widget_MaterialComponents_Chip_Choice);
+        chip.setId(View.generateViewId());
+        chip.setText(category);
+        chip.setTextColor(ContextCompat.getColor(this, R.color.text_primary));
+        chip.setChipBackgroundColor(ColorStateList.valueOf(ContextCompat.getColor(this, R.color.bg_card)));
+        chip.setChipStrokeColor(ColorStateList.valueOf(ContextCompat.getColor(this, R.color.divider)));
+        chip.setChipStrokeWidth(1f);
+        chip.setCheckable(true);
+        chip.setClickable(true);
+        chipGroupCategory.addView(chip);
     }
 
     private void applyFilterAndSort() {
@@ -133,7 +171,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void checkBiometricAuth() {
         SharedPreferences prefs = getSharedPreferences("AppSettings", Context.MODE_PRIVATE);
-        boolean isLockEnabled = prefs.getBoolean(SettingsActivity.KEY_APP_LOCK_ENABLED, false);
+        boolean isLockEnabled = prefs.getBoolean(SettingsActivity.PREF_APP_LOCK_ENABLED, false);
 
         if (isLockEnabled && !isAuthenticated) {
             Executor mainExecutor = ContextCompat.getMainExecutor(this);
@@ -170,19 +208,21 @@ public class MainActivity extends AppCompatActivity {
     private void updateSummaryCard(List<Abonelik> list) {
         SharedPreferences prefs = getSharedPreferences("AppSettings", Context.MODE_PRIVATE);
         String defaultCurrency = prefs.getString("default_currency", "₺");
-        float budgetLimit = prefs.getFloat(SettingsActivity.KEY_BUDGET_LIMIT, 0f);
+        float budgetLimit = prefs.getFloat(SettingsActivity.PREF_BUDGET_LIMIT, 0f);
 
         double totalCostInDefaultCurrency = 0.0;
 
-        for (Abonelik a : list) {
-            try {
-                String amountStr = a.getAmount() != null ? a.getAmount().replace(",", ".") : "0";
-                double amount = Double.parseDouble(amountStr);
-                String subCurrency = (a.getCurrency() != null && !a.getCurrency().isEmpty()) ? a.getCurrency() : "₺";
+        if (list != null) {
+            for (Abonelik a : list) {
+                try {
+                    String amountStr = a.getAmount() != null ? a.getAmount().replace(",", ".") : "0";
+                    double amount = Double.parseDouble(amountStr);
+                    String subCurrency = (a.getCurrency() != null && !a.getCurrency().isEmpty()) ? a.getCurrency() : "₺";
 
-                double convertedAmount = convertCurrency(amount, subCurrency, defaultCurrency);
-                totalCostInDefaultCurrency += convertedAmount;
-            } catch (Exception ignored) {
+                    double convertedAmount = convertCurrency(amount, subCurrency, defaultCurrency);
+                    totalCostInDefaultCurrency += convertedAmount;
+                } catch (Exception ignored) {
+                }
             }
         }
 
@@ -201,25 +241,31 @@ public class MainActivity extends AppCompatActivity {
         }
 
         if (tvToplamAbonelik != null) {
+            int count = list != null ? list.size() : 0;
             if (budgetLimit > 0 && totalCostInDefaultCurrency > budgetLimit) {
                 tvToplamAbonelik.setText(String.format(Locale.getDefault(), "⚠️️ Budget Exceeded! (Limit: %s%.0f)", defaultCurrency, budgetLimit));
                 tvToplamAbonelik.setTextColor(Color.parseColor("#FF6B6B"));
             } else {
-                tvToplamAbonelik.setText(list.size() + " Active Subscriptions");
+                tvToplamAbonelik.setText(count + " Active Subscriptions");
                 tvToplamAbonelik.setTextColor(Color.parseColor("#A0A0B5"));
             }
         }
 
         if (tvYaklasanOdeme != null) {
-            tvYaklasanOdeme.setText(!list.isEmpty() ? "First Added: " + list.get(0).getName() : "Next: -");
+            tvYaklasanOdeme.setText((list != null && !list.isEmpty()) ? "First Added: " + list.get(0).getName() : "Next: -");
         }
 
         ProgressBar progressBar = findViewById(R.id.budgetProgressBar);
+        TextView tvBudgetStatus = findViewById(R.id.tvBudgetStatus);
         if (progressBar != null) {
             if (budgetLimit > 0) {
                 progressBar.setVisibility(View.VISIBLE);
                 int progress = (int) ((totalCostInDefaultCurrency / budgetLimit) * 100);
                 progressBar.setProgress(Math.min(100, progress));
+                if (tvBudgetStatus != null) {
+                    tvBudgetStatus.setText(String.format(Locale.getDefault(), "Budget Used: %.1f%% (%s%.2f / %s%.0f)", (double) progress, defaultCurrency, totalCostInDefaultCurrency, defaultCurrency, budgetLimit));
+                    tvBudgetStatus.setVisibility(View.VISIBLE);
+                }
                 if (progress > 100) {
                     progressBar.setProgressTintList(ColorStateList.valueOf(Color.parseColor("#FF5252")));
                 } else if (progress > 75) {
@@ -228,7 +274,12 @@ public class MainActivity extends AppCompatActivity {
                     progressBar.setProgressTintList(ColorStateList.valueOf(Color.parseColor("#4CD964")));
                 }
             } else {
-                progressBar.setVisibility(View.GONE);
+                progressBar.setVisibility(View.VISIBLE);
+                progressBar.setProgress(0);
+                if (tvBudgetStatus != null) {
+                    tvBudgetStatus.setText("Budget Limit: Not set (Tap Settings to set)");
+                    tvBudgetStatus.setVisibility(View.VISIBLE);
+                }
             }
         }
     }
@@ -245,35 +296,11 @@ public class MainActivity extends AppCompatActivity {
         return (amount * fromRate) / toRate;
     }
 
-    private void setupBottomNav() {
-        BottomNavigationView bottomNavigationView = findViewById(R.id.bottomNavigationView);
-        if (bottomNavigationView != null) {
-            bottomNavigationView.setSelectedItemId(R.id.nav_subscriptions); // Ana ekrandayız
 
-            bottomNavigationView.setOnItemSelectedListener(item -> {
-                int id = item.getItemId();
-                if (id == R.id.nav_subscriptions) {
-                    return true; // Zaten Ana ekrandayız
-                } else if (id == R.id.nav_income) {
-                    startActivity(new Intent(MainActivity.this, IncomeActivity.class));
-                    finish();
-                    return true;
-                } else if (id == R.id.nav_expenses) {
-                    startActivity(new Intent(MainActivity.this, ExpenseActivity.class));
-                    finish();
-                    return true;
-                } else if (id == R.id.nav_analytics) {
-                    // Analiz sayfasına geçiş
-                    startActivity(new Intent(MainActivity.this, AnalyticsActivity.class));
-                    finish();
-                    return true;
-                } else if (id == R.id.nav_settings) {
-                    startActivity(new Intent(MainActivity.this, SettingsActivity.class));
-                    return true;
-                }
-                return false;
-            });
-        }
+
+    @Override
+    protected int getSelectedNavId() {
+        return R.id.nav_subscriptions; // MainActivity için
     }
 
     @Override
@@ -281,7 +308,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
         SharedPreferences prefs = getSharedPreferences("AppSettings", Context.MODE_PRIVATE);
-        int themeMode = prefs.getInt(SettingsActivity.KEY_THEME_MODE, 0);
+        int themeMode = prefs.getInt(SettingsActivity.PREF_THEME_MODE, 0);
         SettingsActivity.applyTheme(themeMode);
 
         EdgeToEdge.enable(this);
@@ -290,7 +317,7 @@ public class MainActivity extends AppCompatActivity {
         db = AboneDatabase.getInstance(this);
 
         View mainView = findViewById(R.id.main);
-        boolean isLockEnabled = prefs.getBoolean(SettingsActivity.KEY_APP_LOCK_ENABLED, false);
+        boolean isLockEnabled = prefs.getBoolean(SettingsActivity.PREF_APP_LOCK_ENABLED, false);
 
         if (isLockEnabled) {
             getWindow().setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE);
@@ -321,9 +348,6 @@ public class MainActivity extends AppCompatActivity {
         chipGroupCategory = findViewById(R.id.chipGroupCategory);
         btnSort = findViewById(R.id.btnSort);
 
-
-
-        // Arama Kutusu Dinleyicisi
         etSearch.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
@@ -338,7 +362,6 @@ public class MainActivity extends AppCompatActivity {
             public void afterTextChanged(Editable s) {}
         });
 
-        // Kategori Chip Seçim Dinleyicisi
         chipGroupCategory.setOnCheckedStateChangeListener((group, checkedIds) -> {
             if (!checkedIds.isEmpty()) {
                 Chip selectedChip = group.findViewById(checkedIds.get(0));
@@ -351,7 +374,6 @@ public class MainActivity extends AppCompatActivity {
             applyFilterAndSort();
         });
 
-        // Ödeme Yöntemi Chip Seçim Dinleyicisi
         chipGroupPayment = findViewById(R.id.chipGroupPayment);
         chipGroupPayment.setOnCheckedStateChangeListener((group, checkedIds) -> {
             if (!checkedIds.isEmpty()) {
@@ -368,7 +390,6 @@ public class MainActivity extends AppCompatActivity {
             applyFilterAndSort();
         });
 
-        // Sıralama Butonu Tıklaması
         btnSort.setOnClickListener(v -> showSortDialog());
 
         ImageButton btnMenu = findViewById(R.id.btnMenu);
@@ -378,7 +399,6 @@ public class MainActivity extends AppCompatActivity {
 
         setupBottomNav();
 
-        // Adapter'ı filtrelenmiş liste (`filteredList`) ile bağla
         adapter = new AboneAdapter(filteredList, db, executor, this::loadData);
         rvAbonelikler.setAdapter(adapter);
         rvAbonelikler.setLayoutManager(new LinearLayoutManager(this));
@@ -388,21 +408,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        BottomNavigationView bottomNavigationView = findViewById(R.id.bottomNavigationView);
-        if (bottomNavigationView != null) {
-            bottomNavigationView.setSelectedItemId(R.id.nav_subscriptions);
-        }
 
-        SharedPreferences sharedPreferences = getSharedPreferences("AppSettings", MODE_PRIVATE);
-        int themeMode = sharedPreferences.getInt(SettingsActivity.KEY_THEME_MODE, 0);
-        SettingsActivity.applyTheme(themeMode);
-
-        CurrencyExchangeManager.fetchLatestRates(this, null);
-        loadData();
-    }
 
     private void showAddSubscriptionDialog() {
         SharedPreferences prefs = getSharedPreferences("AppSettings", Context.MODE_PRIVATE);
@@ -501,10 +507,12 @@ public class MainActivity extends AppCompatActivity {
         etCategory.setFocusable(false);
         etCategory.setClickable(true);
 
-        List<String> categoryList = new ArrayList<>(Arrays.asList(
-                "Music", "Movies & TV", "Software & Cloud", "Gaming",
-                "Education & Books", "Sports & Fitness", "Other", "➕ Add Custom Category..."
-        ));
+        List<String> existingCategories = new ArrayList<>();
+        for (Abonelik subscription : allSubscriptionList) {
+            existingCategories.add(subscription.getCategory());
+        }
+        List<String> categoryList = CategoryStore.getCategories(this, existingCategories);
+        categoryList.add("➕ Add Custom Category...");
 
         etCategory.setOnClickListener(view -> {
             String[] categoryOptions = categoryList.toArray(new String[0]);
@@ -528,7 +536,10 @@ public class MainActivity extends AppCompatActivity {
                                     .setPositiveButton("Add", (d, w) -> {
                                         String newCat = customInput.getText().toString().trim();
                                         if (!newCat.isEmpty()) {
-                                            categoryList.add(categoryList.size() - 1, newCat);
+                                            CategoryStore.addCategory(MainActivity.this, newCat);
+                                            if (!containsCategory(categoryList, newCat)) {
+                                                categoryList.add(categoryList.size() - 1, newCat);
+                                            }
                                             etCategory.setText(newCat);
                                         }
                                     })
@@ -586,6 +597,7 @@ public class MainActivity extends AppCompatActivity {
                     String notes = etNotes.getText().toString();
 
                     if (!name.isEmpty() && !amount.isEmpty() && !date.isEmpty()) {
+                        CategoryStore.addCategory(MainActivity.this, category);
                         executor.execute(() -> {
                             db.aboneDao().ekle(new Abonelik(name, amount, date, category, notes, billingCycle, currency, paymentMethod));
                             runOnUiThread(() -> {
@@ -596,6 +608,15 @@ public class MainActivity extends AppCompatActivity {
                 })
                 .setNegativeButton("Cancel", (dialog, which) -> dialog.cancel())
                 .show();
+    }
+
+    private boolean containsCategory(List<String> categories, String category) {
+        for (String existingCategory : categories) {
+            if (existingCategory.equalsIgnoreCase(category)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override

@@ -1,4 +1,4 @@
-package com.example.subscriptiontracker;
+package com.example.WalletSIOPM;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -17,10 +17,10 @@ import java.util.Date;
 public class CurrencyExchangeManager {
 
     private static final String PREF_NAME = "ExchangeRatesPrefs";
-    private static final String KEY_RATE_USD = "rate_usd";
-    private static final String KEY_RATE_EUR = "rate_eur";
-    private static final String KEY_RATE_GBP = "rate_gbp";
-    private static final String KEY_LAST_UPDATE = "last_update";
+    private static final String PREF_RATE_USD = "rate_usd";
+    private static final String PREF_RATE_EUR = "rate_eur";
+    private static final String PREF_RATE_GBP = "rate_gbp";
+    private static final String PREF_LAST_UPDATE = "last_update";
 
     public interface CurrencyUpdateListener {
         void onRatesUpdated(boolean success);
@@ -47,20 +47,32 @@ public class CurrencyExchangeManager {
                     JSONObject json = new JSONObject(sb.toString());
                     if (json.getString("result").equals("success")) {
                         JSONObject rates = json.getJSONObject("rates");
-                        double tryRate = rates.optDouble("TRY", 34.0);
-                        double eurRate = rates.optDouble("EUR", 0.92);
-                        double gbpRate = rates.optDouble("GBP", 0.78);
+                        double tryRate = rates.optDouble("TRY", Double.NaN);
+                        double eurRate = rates.optDouble("EUR", Double.NaN);
+                        double gbpRate = rates.optDouble("GBP", Double.NaN);
+                        if (!isValidRate(tryRate) || !isValidRate(eurRate) || !isValidRate(gbpRate)) {
+                            if (listener != null) {
+                                new Handler(Looper.getMainLooper()).post(() -> listener.onRatesUpdated(false));
+                            }
+                            return;
+                        }
 
                         double rateUSD = tryRate;
                         double rateEUR = tryRate / eurRate;
                         double rateGBP = tryRate / gbpRate;
+                        if (!isValidRate(rateEUR) || !isValidRate(rateGBP)) {
+                            if (listener != null) {
+                                new Handler(Looper.getMainLooper()).post(() -> listener.onRatesUpdated(false));
+                            }
+                            return;
+                        }
 
                         SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
                         prefs.edit()
-                                .putFloat(KEY_RATE_USD, (float) rateUSD)
-                                .putFloat(KEY_RATE_EUR, (float) rateEUR)
-                                .putFloat(KEY_RATE_GBP, (float) rateGBP)
-                                .putLong(KEY_LAST_UPDATE, System.currentTimeMillis())
+                                .putString(PREF_RATE_USD, Double.toString(rateUSD))
+                                .putString(PREF_RATE_EUR, Double.toString(rateEUR))
+                                .putString(PREF_RATE_GBP, Double.toString(rateGBP))
+                                .putLong(PREF_LAST_UPDATE, System.currentTimeMillis())
                                 .apply();
 
                         if (listener != null) {
@@ -81,6 +93,27 @@ public class CurrencyExchangeManager {
         }).start();
     }
 
+    private static boolean isValidRate(double rate) {
+        return Double.isFinite(rate) && rate > 0.0 && rate <= 1_000_000_000.0;
+    }
+
+    private static double getStoredRate(SharedPreferences prefs, String preferenceName, double fallback) {
+        Object storedRate = prefs.getAll().get(preferenceName);
+        if (storedRate instanceof Number) {
+            double rate = ((Number) storedRate).doubleValue();
+            return isValidRate(rate) ? rate : fallback;
+        }
+        if (storedRate instanceof String) {
+            try {
+                double rate = Double.parseDouble((String) storedRate);
+                return isValidRate(rate) ? rate : fallback;
+            } catch (NumberFormatException e) {
+                return fallback;
+            }
+        }
+        return fallback;
+    }
+
     public static double getRateToTRY(Context context, String currency) {
         if (currency == null) return 1.0;
         SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
@@ -88,21 +121,21 @@ public class CurrencyExchangeManager {
 
         switch (cleanCurr) {
             case "$": case "USD":
-                return prefs.getFloat(KEY_RATE_USD, 34.0f);
+                return getStoredRate(prefs, PREF_RATE_USD, 34.0);
             case "€": case "EUR":
-                return prefs.getFloat(KEY_RATE_EUR, 37.5f);
+                return getStoredRate(prefs, PREF_RATE_EUR, 37.5);
             case "£": case "GBP":
-                return prefs.getFloat(KEY_RATE_GBP, 44.5f);
+                return getStoredRate(prefs, PREF_RATE_GBP, 44.5);
             case "₿": case "BTC":
                 return 3500000.0f;
             case "Ξ": case "ETH":
                 return 130000.0f;
             case "USDT":
-                return prefs.getFloat(KEY_RATE_USD, 34.0f);
+                return getStoredRate(prefs, PREF_RATE_USD, 34.0);
             case "CAD":
-                return prefs.getFloat(KEY_RATE_USD, 34.0f) * 0.72f;
+                return getStoredRate(prefs, PREF_RATE_USD, 34.0) * 0.72;
             case "AUD":
-                return prefs.getFloat(KEY_RATE_USD, 34.0f) * 0.65f;
+                return getStoredRate(prefs, PREF_RATE_USD, 34.0) * 0.65;
             default:
                 return 1.0f;
         }
@@ -110,7 +143,7 @@ public class CurrencyExchangeManager {
 
     public static String getLastUpdateTime(Context context) {
         SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
-        long time = prefs.getLong(KEY_LAST_UPDATE, 0);
+        long time = prefs.getLong(PREF_LAST_UPDATE, 0);
         if (time == 0) return "Never updated (Using default rates)";
         return DateFormat.format("dd/MM/yyyy HH:mm", new Date(time)).toString();
     }
