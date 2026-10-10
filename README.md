@@ -8,7 +8,7 @@
   WalletSIOPM is an open-source Android application designed to track and manage recurring subscriptions, personal income, one-off expenses, and comprehensive payment schedules.
 </p>
 
-### Release v2.3.0
+### Release v2.3.1
 
 #### New Features and Enhancements
 * **Analytical Reporting:** Integrated a new data table visualizing subscription expenditure via percentage distribution metrics.
