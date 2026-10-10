@@ -2,19 +2,16 @@ name: MobSF Security Scan
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main ]
   pull_request:
-    branches: [ main, master ]
+    branches: [ main ]
   workflow_dispatch:
-
-permissions:
-  contents: read
-  security-events: write
 
 jobs:
   mobsfscan:
     runs-on: ubuntu-latest
-    name: Run mobsfscan
+    timeout-minutes: 10  # 10 dakikayı geçerse otomatik iptal eder
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -24,7 +21,7 @@ jobs:
         with:
           args: '. --sarif --output results.sarif || true'
 
-      - name: Upload SARIF report to GitHub Security
+      - name: Upload SARIF report
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: results.sarif
