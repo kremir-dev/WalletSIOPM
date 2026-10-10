@@ -1,10 +1,12 @@
-# WalletSIOPM<img width="256" height="256" alt="Petalart-Free-Shopping-Money-wallet 256" src="https://github.com/user-attachments/assets/ae721212-01d4-47a2-a1d2-70d2b7fa802f" />
+<p align="center">
+  <img width="128" height="128" alt="WalletSIOPM Logo" src="https://github.com/user-attachments/assets/ae721212-01d4-47a2-a1d2-70d2b7fa802f" />
+</p>
 
+<h1 align="center">WalletSIOPM</h1>
 
-MyWallet is an open-source Android application designed to track and manage recurring subscriptions, personal income, one-off expenses, and comprehensive payment schedules.
-
-
-## Changelog
+<p align="center">
+  WalletSIOPM is an open-source Android application designed to track and manage recurring subscriptions, personal income, one-off expenses, and comprehensive payment schedules.
+</p>
 
 ### Release v2.3.0
 
