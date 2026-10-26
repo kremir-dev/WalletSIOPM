@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
@@ -18,6 +19,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -46,6 +48,12 @@ public class UpcomingPaymentsActivity extends SecureActivity {
         adapter = new PaymentAdapter();
         list.setLayoutManager(new LinearLayoutManager(this));
         list.setAdapter(adapter);
+        RadioGroup horizonSelector = findViewById(R.id.rgUpcomingHorizon);
+        horizonSelector.setOnCheckedChangeListener((group, checkedId) -> {
+            int horizonDays = checkedId == R.id.rbUpcoming90Days ? 90
+                    : checkedId == R.id.rbUpcoming60Days ? 60 : 30;
+            loadPayments(horizonDays);
+        });
         findViewById(R.id.btnUpcomingBack).setOnClickListener(view -> finish());
 
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
@@ -58,7 +66,7 @@ public class UpcomingPaymentsActivity extends SecureActivity {
             findViewById(R.id.mainUpcomingPayments).setVisibility(View.INVISIBLE);
             authenticate();
         } else {
-            loadPayments();
+            loadPayments(30);
         }
     }
 
@@ -69,7 +77,7 @@ public class UpcomingPaymentsActivity extends SecureActivity {
                     @Override
                     public void onAuthenticationSucceeded(@NonNull BiometricPrompt.AuthenticationResult result) {
                         findViewById(R.id.mainUpcomingPayments).setVisibility(View.VISIBLE);
-                        loadPayments();
+                        loadPayments(30);
                     }
 
                     @Override
@@ -85,31 +93,40 @@ public class UpcomingPaymentsActivity extends SecureActivity {
         prompt.authenticate(promptInfo);
     }
 
-    private void loadPayments() {
+    private void loadPayments(int horizonDays) {
         executor.execute(() -> {
             List<Abonelik> subscriptions = database.aboneDao().tumunuGetir();
+            Calendar periodStart = Calendar.getInstance();
+            periodStart.set(Calendar.HOUR_OF_DAY, 0);
+            periodStart.set(Calendar.MINUTE, 0);
+            periodStart.set(Calendar.SECOND, 0);
+            periodStart.set(Calendar.MILLISECOND, 0);
+            Calendar periodEnd = (Calendar) periodStart.clone();
+            periodEnd.add(Calendar.DAY_OF_MONTH, horizonDays);
+            periodEnd.add(Calendar.MILLISECOND, -1);
             List<UpcomingPaymentUtils.DuePayment> payments =
-                    UpcomingPaymentUtils.getUpcomingPayments(subscriptions, new Date());
+                    UpcomingPaymentUtils.getPaymentsInPeriod(subscriptions,
+                            periodStart.getTime(), periodEnd.getTime());
             SharedPreferences prefs = getSharedPreferences("AppSettings", Context.MODE_PRIVATE);
             String currency = prefs.getString("default_currency", "₺");
-            long next30Days = System.currentTimeMillis() + 30L * 24 * 60 * 60 * 1000;
             double total = 0;
-            List<UpcomingPaymentUtils.DuePayment> dueWithin30Days =
-                    UpcomingPaymentUtils.getPaymentsInPeriod(subscriptions, new Date(),
-                            new Date(next30Days));
-            for (UpcomingPaymentUtils.DuePayment payment : dueWithin30Days) {
+            for (UpcomingPaymentUtils.DuePayment payment : payments) {
                 Abonelik subscription = payment.getSubscription();
                 double amount = parseAmount(subscription.getAmount());
                 if (Double.isFinite(amount)) {
                     total += convertCurrency(amount, subscription.getCurrency(), currency);
                 }
             }
-            double next30DayTotal = total;
-            int next30DayCount = dueWithin30Days.size();
+            double periodTotal = total;
+            int paymentCount = payments.size();
             runOnUiThread(() -> {
-                summary.setText(String.format(Locale.getDefault(),
-                        "Next 30 days: %s%.2f • %d payments due",
-                        currency, next30DayTotal, next30DayCount));
+                if (paymentCount == 0) {
+                    summary.setText(getString(R.string.upcoming_empty, horizonDays));
+                } else {
+                    summary.setText(String.format(Locale.getDefault(),
+                            getString(R.string.upcoming_summary),
+                            horizonDays, currency, periodTotal, paymentCount));
+                }
                 adapter.submit(payments);
             });
         });

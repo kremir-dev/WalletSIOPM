@@ -32,11 +32,41 @@
             android:textSize="22sp" />
     </LinearLayout>
 
+    <RadioGroup
+        android:id="@+id/rgUpcomingHorizon"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:orientation="horizontal">
+
+        <RadioButton
+            android:id="@+id/rbUpcoming30Days"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:checked="true"
+            android:text="@string/upcoming_30_days" />
+
+        <RadioButton
+            android:id="@+id/rbUpcoming60Days"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/upcoming_60_days" />
+
+        <RadioButton
+            android:id="@+id/rbUpcoming90Days"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/upcoming_90_days" />
+    </RadioGroup>
+
     <TextView
         android:id="@+id/tvUpcomingSummary"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="4dp"
         android:layout_marginBottom="8dp"
         android:text="Loading upcoming payments..."
         android:textColor="@color/text_secondary"

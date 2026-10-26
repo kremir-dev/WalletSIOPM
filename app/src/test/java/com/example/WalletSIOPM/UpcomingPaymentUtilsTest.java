@@ -47,4 +47,18 @@ public class UpcomingPaymentUtilsTest {
         assertEquals("28/02/2026",
                 new SimpleDateFormat("dd/MM/yyyy", Locale.US).format(payments.get(0).getDate()));
     }
+
+    @Test
+    public void paymentPeriodIncludesEveryRenewalWithinSelectedHorizon() throws Exception {
+        Abonelik subscription = new Abonelik(
+                "Service", "10", "15/01/2026", "Other", "", "1 Month");
+        Date periodStart = new SimpleDateFormat("dd/MM/yyyy", Locale.US).parse("01/01/2026");
+        Date periodEnd = new SimpleDateFormat("dd/MM/yyyy", Locale.US).parse("30/04/2026");
+
+        List<UpcomingPaymentUtils.DuePayment> payments =
+                UpcomingPaymentUtils.getPaymentsInPeriod(
+                        java.util.Collections.singletonList(subscription), periodStart, periodEnd);
+
+        assertEquals(4, payments.size());
+    }
 }

@@ -1,4 +1,9 @@
 <resources>
     <string name="widget_description">Shows your next subscription payments</string>
     <string name="app_name">WalletSIOPM</string>
+    <string name="upcoming_30_days">30 days</string>
+    <string name="upcoming_60_days">60 days</string>
+    <string name="upcoming_90_days">90 days</string>
+    <string name="upcoming_summary">Next %1$d days: %2$s%3$.2f • %4$d payments due</string>
+    <string name="upcoming_empty">No payments due in the next %1$d days.</string>
 </resources>
