@@ -12,7 +12,7 @@
 
 * **Flexible Upcoming Payment View:** Filter the payment schedule to the next 30, 60, or 90 days. Every renewal in the selected period is listed, and the total is shown in the default currency.
 
-### Previous Release v2.3.0
+### Previous Release v2.3.1
 
 #### New Features and Enhancements
 * **Analytical Reporting:** Integrated a new data table visualizing subscription expenditure via percentage distribution metrics.
