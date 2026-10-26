@@ -27,10 +27,12 @@
 
 * **Subscription & Expense Management:** Create, view, and delete recurring subscriptions and one-off expenses (groceries, bills, bank transfers) with custom titles, amounts, billing cycles, categories, and optional notes.
 * **Unified Transaction Ledger:** A chronological account statement view tracking income entries, subscription renewals, and single expenses in one place.
-* **Advanced Financial Analytics:** Graphical data visualization powered by `MPAndroidChart`, featuring categorical PieCharts, Income vs. Expense BarCharts, and Monthly Trend LineCharts.
+* **Advanced Financial Analytics:** Monthly and year-to-date reports compare current and previous periods, with category breakdowns and six-month/year-to-date spending trends based on dated transactions and scheduled subscription renewals.
 * **Multi-Currency Normalization:** Built-in `CurrencyExchangeManager` supporting fiat currencies (₺, \$, €, £, CAD, AUD) and cryptocurrencies (BTC, ETH, USDT). Automatically fetches live exchange rates and normalizes all financial summaries into your default currency.
 * **Payment Method Tracking:** Assign specialized badges (Credit Card, Cash, etc.) to transactions and quickly filter through them on the dashboard using dynamic filter chips.
 * **Custom Categories & Limits:** Dynamic creation of user-defined categories (➕ Add Custom Category) that adaptively update budget thresholds in the Settings menu.
+* **Budget Monitoring:** Monthly limits include subscription renewals and dated one-off expenses; category limits flag overspending across both.
+* **Upcoming Payments & Widget:** A dedicated payment schedule lists the next subscription renewal dates, and a home-screen widget shows the next three payments. Widget details are hidden when app lock is enabled.
 * **Data Control & Export:** Features a comprehensive "Reset All Data" option to wipe all database entities, alongside a CSV Export Utility to download and share financial reports.
 * **Dynamic Brand Icons:** Automated high-resolution favicon fetching via Google Favicon API for popular services (Netflix, Spotify, YouTube), with a smart initials-avatar fallback for offline states.
 * **Background Automation & Notifications:** Secure background task execution using `WorkManager` (via `NotificationWorker`) alongside native `AlarmManager` for precise, reliable payment reminders. Fully compliant with Android 13+ `POST_NOTIFICATIONS` runtime permissions.

@@ -384,13 +384,35 @@ public class SettingsActivity extends SecureActivity {
             executor.execute(() -> {
                 AboneDatabase db = AboneDatabase.getInstance(this);
                 List<Abonelik> subs = db.aboneDao().tumunuGetir();
+                List<Expense> expenses = db.expenseDao().tumGiderleriGetir();
                 List<String> existingCategories = new ArrayList<>();
                 if (subs != null) {
                     for (Abonelik sub : subs) {
                         existingCategories.add(sub.getCategory());
                     }
                 }
+                if (expenses != null) {
+                    for (Expense expense : expenses) {
+                        existingCategories.add(expense.getCategory());
+                    }
+                }
                 List<String> categoryList = CategoryStore.getCategories(this, existingCategories);
+                String[] expenseCategories = {
+                        "Food & Grocery", "Shopping", "Bills & Utilities",
+                        "Transport", "Entertainment", "Other"
+                };
+                for (String category : expenseCategories) {
+                    boolean present = false;
+                    for (String existing : categoryList) {
+                        if (existing.equalsIgnoreCase(category)) {
+                            present = true;
+                            break;
+                        }
+                    }
+                    if (!present) {
+                        categoryList.add(category);
+                    }
+                }
 
                 runOnUiThread(() -> {
                     ScrollView catScroll = new ScrollView(this);
@@ -442,6 +464,7 @@ public class SettingsActivity extends SecureActivity {
 
             sharedPreferences.edit().putBoolean(PREF_APP_LOCK_ENABLED, newState).apply();
             tvAppLockSub.setText(newState ? "Enabled (Active on launch)" : "Disabled");
+            SubscriptionWidgetProvider.refresh(this);
             Toast.makeText(this, newState ? "App Lock Enabled" : "App Lock Disabled", Toast.LENGTH_SHORT).show();
         });
 

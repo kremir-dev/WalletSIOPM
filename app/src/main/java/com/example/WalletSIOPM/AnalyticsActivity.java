@@ -30,7 +30,11 @@ import com.github.mikephil.charting.data.PieEntry;
 import com.github.mikephil.charting.formatter.PercentFormatter;
 import com.github.mikephil.charting.formatter.ValueFormatter;
 import com.github.mikephil.charting.utils.ColorTemplate;
+import com.google.android.material.button.MaterialButtonToggleGroup;
+
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -40,41 +44,59 @@ import java.util.concurrent.Executors;
 
 public class AnalyticsActivity extends SecureActivity {
 
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private AboneDatabase db;
-    private ExecutorService executor = Executors.newSingleThreadExecutor();
-    private TextView tvAnalyticsIncome, tvAnalyticsExpense, tvSmartInsight;
-    private PieChart pieChart, pieChartPercentage;
+    private TextView tvAnalyticsIncome;
+    private TextView tvAnalyticsExpense;
+    private TextView tvSmartInsight;
+    private TextView tvMonthComparison;
+    private PieChart pieChart;
+    private PieChart pieChartPercentage;
     private BarChart barChart;
     private LineChart lineChart;
+    private int analyticsPeriod;
+
+    private static final class MonthStats {
+        final String label;
+        double income;
+        double expense;
+
+        MonthStats(String label) {
+            this.label = label;
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         SharedPreferences prefs = getSharedPreferences("AppSettings", Context.MODE_PRIVATE);
-        int themeMode = prefs.getInt(SettingsActivity.PREF_THEME_MODE, 0);
-        SettingsActivity.applyTheme(themeMode);
-
+        SettingsActivity.applyTheme(prefs.getInt(SettingsActivity.PREF_THEME_MODE, 0));
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_analytics);
 
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.mainAnalytics), (v, insets) -> {
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.mainAnalytics), (view, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            view.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
 
         db = AboneDatabase.getInstance(this);
-
         tvAnalyticsIncome = findViewById(R.id.tvAnalyticsIncome);
         tvAnalyticsExpense = findViewById(R.id.tvAnalyticsExpense);
         tvSmartInsight = findViewById(R.id.tvSmartInsight);
+        tvMonthComparison = findViewById(R.id.tvMonthComparison);
         pieChart = findViewById(R.id.pieChart);
         pieChartPercentage = findViewById(R.id.pieChartPercentage);
         barChart = findViewById(R.id.barChart);
         lineChart = findViewById(R.id.lineChart);
-
-        setupBottomNav();
+        MaterialButtonToggleGroup periodGroup = findViewById(R.id.analyticsPeriodGroup);
+        periodGroup.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
+            if (isChecked) {
+                analyticsPeriod = checkedId == R.id.btnPeriodYear ? 1 : 0;
+                loadFinancialData();
+            }
+        });
+        NavigationHelper.setup(this, R.id.nav_analytics);
 
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
@@ -85,119 +107,206 @@ public class AnalyticsActivity extends SecureActivity {
                 finish();
             }
         });
-
         loadFinancialData();
-    }
-
-    private void setupBottomNav() {
-        NavigationHelper.setup(this, R.id.nav_analytics);
     }
 
     private void loadFinancialData() {
         executor.execute(() -> {
             List<Income> incomes = db.incomeDao().tumGelirleriGetir();
-            List<Abonelik> subs = db.aboneDao().tumunuGetir();
+            List<Abonelik> subscriptions = db.aboneDao().tumunuGetir();
             List<Expense> expenses = db.expenseDao().tumGiderleriGetir();
+            String currency = getSharedPreferences("AppSettings", Context.MODE_PRIVATE)
+                    .getString("default_currency", "₺");
+            Map<String, Double> currentCategories = new HashMap<>();
+            List<MonthStats> months = new ArrayList<>();
+            Calendar thisMonth = UpcomingPaymentUtils.monthStart(Calendar.getInstance());
 
-            SharedPreferences prefs = getSharedPreferences("AppSettings", Context.MODE_PRIVATE);
-            String defaultCurrency = prefs.getString("default_currency", "₺");
-
-            double totalIncome = 0.0;
-            if (incomes != null) {
-                for (Income inc : incomes) {
-                    try {
-                        double amount = Double.parseDouble(inc.getAmount().replace(",", "."));
-                        String incCurr = inc.getCurrency() != null ? inc.getCurrency() : "₺";
-                        totalIncome += convertCurrency(amount, incCurr, defaultCurrency);
-                    } catch (Exception ignored) {}
-                }
+            int monthCount = analyticsPeriod == 0 ? 6 : thisMonth.get(Calendar.MONTH) + 1;
+            Calendar yearStart = (Calendar) thisMonth.clone();
+            yearStart.set(Calendar.MONTH, Calendar.JANUARY);
+            for (int index = 0; index < monthCount; index++) {
+                Calendar start = analyticsPeriod == 0
+                        ? (Calendar) thisMonth.clone() : (Calendar) yearStart.clone();
+                start.add(Calendar.MONTH, analyticsPeriod == 0 ? index - (monthCount - 1) : index);
+                months.add(calculateMonth(start, subscriptions, expenses, incomes, currency,
+                        analyticsPeriod == 1 || index == monthCount - 1, currentCategories));
             }
 
-            double totalExpense = 0.0;
-            Map<String, Double> categoryMap = new HashMap<>();
-
-            if (subs != null) {
-                for (Abonelik sub : subs) {
-                    try {
-                        double amount = Double.parseDouble(sub.getAmount().replace(",", "."));
-                        String subCurr = sub.getCurrency() != null ? sub.getCurrency() : "₺";
-                        double convertedAmount = convertCurrency(amount, subCurr, defaultCurrency);
-                        totalExpense += convertedAmount;
-
-                        String cat = (sub.getCategory() != null && !sub.getCategory().isEmpty()) ? sub.getCategory() : "Other";
-                        categoryMap.put(cat, categoryMap.getOrDefault(cat, 0.0) + convertedAmount);
-                    } catch (Exception ignored) {}
-                }
-            }
-
-            if (expenses != null) {
-                for (Expense exp : expenses) {
-                    try {
-                        double amount = Double.parseDouble(exp.getAmount().replace(",", "."));
-                        String expCurr = exp.getCurrency() != null ? exp.getCurrency() : "₺";
-                        double convertedAmount = convertCurrency(amount, expCurr, defaultCurrency);
-                        totalExpense += convertedAmount;
-
-                        String cat = (exp.getCategory() != null && !exp.getCategory().isEmpty()) ? exp.getCategory() : "Other";
-                        categoryMap.put(cat, categoryMap.getOrDefault(cat, 0.0) + convertedAmount);
-                    } catch (Exception ignored) {}
-                }
-            }
-
-            final double finalIncome = totalIncome;
-            final double finalExpense = totalExpense;
-            final double yearlyProjection = finalExpense * 12;
-
-            String savingsTip;
-            if (finalExpense == 0) {
-                savingsTip = "You have no active expenses recorded. Add subscriptions or expenses to get AI-powered financial insights!";
-            } else if (finalIncome > finalExpense) {
-                savingsTip = String.format(Locale.getDefault(),
-                        "📊 Yearly Projection: Your annual spending is projected at %.2f %s.\n\nGreat job! Your income exceeds your expenses. You are saving %.2f %s monthly.",
-                        yearlyProjection, defaultCurrency, (finalIncome - finalExpense), defaultCurrency);
+            MonthStats current = analyticsPeriod == 0
+                    ? months.get(months.size() - 1) : sumMonths(months, "Year to date");
+            MonthStats previous = analyticsPeriod == 0
+                    ? months.get(months.size() - 2)
+                    : calculatePreviousYearToDate(thisMonth, subscriptions, expenses, incomes, currency);
+            String comparison;
+            if (previous.expense == 0) {
+                comparison = current.expense == 0
+                        ? (analyticsPeriod == 0 ? "No expenses recorded this month or last month."
+                        : "No expenses recorded this year or the same period last year.")
+                        : "Spending is up from zero in the comparison period.";
             } else {
-                savingsTip = String.format(Locale.getDefault(),
-                        "📊 Yearly Projection: Your annual spending is projected at %.2f %s.\n\n⚠️ Warning: Your expenses exceed your income. Consider reviewing or cancelling unused subscriptions to save money.",
-                        yearlyProjection, defaultCurrency);
+                double change = (current.expense - previous.expense) / previous.expense * 100;
+                comparison = String.format(Locale.getDefault(),
+                        "%s%.2f this period • %s%.2f previous period • %s%.1f%%",
+                        currency, current.expense, currency, previous.expense,
+                        change >= 0 ? "+" : "", change);
             }
 
-            List<PieEntry> entries = new ArrayList<>();
-            for (Map.Entry<String, Double> entry : categoryMap.entrySet()) {
+            String insight;
+            if (current.expense == 0) {
+                insight = analyticsPeriod == 0
+                        ? "No spending is recorded for this month yet. Add dated expenses or subscriptions to see your trend."
+                        : "No spending is recorded for this year yet. Add dated expenses or subscriptions to see your trend.";
+            } else if (current.income >= current.expense) {
+                insight = String.format(Locale.getDefault(),
+                        "Recorded income covers spending for this period. Remaining: %s%.2f.\n\nThe trend uses dated expenses and scheduled subscription renewals.",
+                        currency, current.income - current.expense);
+            } else {
+                insight = String.format(Locale.getDefault(),
+                        "Spending is higher than recorded income by %s%.2f for this period.\n\nReview the category breakdown and upcoming renewals to find savings.",
+                        currency, current.expense - current.income);
+            }
+
+            List<PieEntry> categoryEntries = new ArrayList<>();
+            for (Map.Entry<String, Double> entry : currentCategories.entrySet()) {
                 double amount = entry.getValue();
-                if (Double.isFinite(amount) && amount > 0.0 && amount <= Float.MAX_VALUE) {
-                    entries.add(new PieEntry((float) amount, entry.getKey()));
+                if (Double.isFinite(amount) && amount > 0 && amount <= Float.MAX_VALUE) {
+                    categoryEntries.add(new PieEntry((float) amount, entry.getKey()));
                 }
             }
-            if (entries.isEmpty()) {
-                entries.add(new PieEntry(1f, "No Expenses"));
+            if (categoryEntries.isEmpty()) {
+                categoryEntries.add(new PieEntry(1f, "No Expenses"));
             }
 
             runOnUiThread(() -> {
-                tvAnalyticsIncome.setText(String.format(Locale.getDefault(), "%s%.2f", defaultCurrency, finalIncome));
-                tvAnalyticsExpense.setText(String.format(Locale.getDefault(), "%s%.2f", currencySymbolFix(defaultCurrency), finalExpense));
-                tvSmartInsight.setText(savingsTip);
-                setupPieChart(entries, defaultCurrency);
-                setupPercentagePieChart(entries);
-                setupBarChart(finalIncome, finalExpense, defaultCurrency);
-                setupLineChart(finalExpense, defaultCurrency);
+                tvAnalyticsIncome.setText(String.format(Locale.getDefault(), "%s%.2f", currency, current.income));
+                tvAnalyticsExpense.setText(String.format(Locale.getDefault(), "%s%.2f", currency, current.expense));
+                tvMonthComparison.setText(comparison);
+                tvSmartInsight.setText(insight);
+                String periodLabel = analyticsPeriod == 0 ? "This Month" : "Year to Date";
+                ((TextView) findViewById(R.id.tvAnalyticsIncomeLabel)).setText(periodLabel + " Income");
+                ((TextView) findViewById(R.id.tvAnalyticsExpenseLabel)).setText(periodLabel + " Expense");
+                ((TextView) findViewById(R.id.tvCategoryChartTitle)).setText(periodLabel + " by Category");
+                ((TextView) findViewById(R.id.tvIncomeExpenseChartTitle))
+                        .setText("Income vs Expense " + periodLabel);
+                ((TextView) findViewById(R.id.tvSpendingTrendTitle)).setText(
+                        analyticsPeriod == 0
+                                ? "Actual Monthly Spending (Last 6 Months)"
+                                : "Actual Monthly Spending (This Year)");
+                setupPieChart(categoryEntries, currency);
+                setupPercentagePieChart(categoryEntries);
+                setupBarChart(current.income, current.expense, currency);
+                setupLineChart(months, currency);
             });
         });
     }
 
-    private String currencySymbolFix(String currency) {
-        return currency != null ? currency : "₺";
+    private MonthStats calculateMonth(Calendar monthStart, List<Abonelik> subscriptions,
+                                      List<Expense> expenses, List<Income> incomes,
+                                      String currency, boolean includeCategories,
+                                      Map<String, Double> categories) {
+        Calendar start = UpcomingPaymentUtils.monthStart(monthStart);
+        Calendar next = (Calendar) start.clone();
+        next.add(Calendar.MONTH, 1);
+        Date startDate = start.getTime();
+        Date endDate = new Date(next.getTimeInMillis() - 1);
+        MonthStats month = new MonthStats(
+                new java.text.SimpleDateFormat("MMM", Locale.getDefault()).format(startDate));
+
+        for (UpcomingPaymentUtils.DuePayment due :
+                UpcomingPaymentUtils.getPaymentsInPeriod(subscriptions, startDate, endDate)) {
+            Abonelik subscription = due.getSubscription();
+            double amount = parseAmount(subscription.getAmount());
+            if (Double.isFinite(amount)) {
+                double converted = convertCurrency(amount, subscription.getCurrency(), currency);
+                month.expense += converted;
+                if (includeCategories) {
+                    addCategory(categories, subscription.getCategory(), converted);
+                }
+            }
+        }
+        if (expenses != null) {
+            for (Expense expense : expenses) {
+                Date date = UpcomingPaymentUtils.parseDate(expense.getDate());
+                if (date == null || date.before(startDate) || date.after(endDate)) {
+                    continue;
+                }
+                double amount = parseAmount(expense.getAmount());
+                if (Double.isFinite(amount)) {
+                    double converted = convertCurrency(amount, expense.getCurrency(), currency);
+                    month.expense += converted;
+                    if (includeCategories) {
+                        addCategory(categories, expense.getCategory(), converted);
+                    }
+                }
+            }
+        }
+        if (incomes != null) {
+            for (Income income : incomes) {
+                Date date = UpcomingPaymentUtils.parseDate(income.getDate());
+                if (date == null || date.before(startDate) || date.after(endDate)) {
+                    continue;
+                }
+                double amount = parseAmount(income.getAmount());
+                if (Double.isFinite(amount)) {
+                    month.income += convertCurrency(amount, income.getCurrency(), currency);
+                }
+            }
+        }
+        return month;
+    }
+
+    private MonthStats sumMonths(List<MonthStats> months, String label) {
+        MonthStats total = new MonthStats(label);
+        for (MonthStats month : months) {
+            total.income += month.income;
+            total.expense += month.expense;
+        }
+        return total;
+    }
+
+    private MonthStats calculatePreviousYearToDate(Calendar thisMonth, List<Abonelik> subscriptions,
+                                                   List<Expense> expenses, List<Income> incomes,
+                                                   String currency) {
+        Calendar yearStart = UpcomingPaymentUtils.monthStart(thisMonth);
+        yearStart.add(Calendar.YEAR, -1);
+        yearStart.set(Calendar.MONTH, Calendar.JANUARY);
+        MonthStats total = new MonthStats("Previous year to date");
+        int monthsElapsed = thisMonth.get(Calendar.MONTH) + 1;
+        for (int index = 0; index < monthsElapsed; index++) {
+            Calendar month = (Calendar) yearStart.clone();
+            month.add(Calendar.MONTH, index);
+            MonthStats stats = calculateMonth(month, subscriptions, expenses, incomes,
+                    currency, false, new HashMap<>());
+            total.income += stats.income;
+            total.expense += stats.expense;
+        }
+        return total;
+    }
+
+    private double parseAmount(String amount) {
+        if (amount == null) {
+            return Double.NaN;
+        }
+        try {
+            return Double.parseDouble(amount.replace(",", "."));
+        } catch (NumberFormatException ignored) {
+            return Double.NaN;
+        }
+    }
+
+    private void addCategory(Map<String, Double> categories, String category, double amount) {
+        String label = category == null || category.trim().isEmpty() ? "Other" : category;
+        categories.put(label, categories.getOrDefault(label, 0.0) + amount);
     }
 
     private double convertCurrency(double amount, String fromCurrency, String toCurrency) {
-        if (fromCurrency == null || fromCurrency.isEmpty()) fromCurrency = "₺";
-        if (toCurrency == null || toCurrency.isEmpty()) toCurrency = "₺";
-
-        if (fromCurrency.equals(toCurrency)) return amount;
-
-        double fromRate = CurrencyExchangeManager.getRateToTRY(this, fromCurrency);
+        String from = fromCurrency == null || fromCurrency.isEmpty() ? "₺" : fromCurrency;
+        if (from.equals(toCurrency)) {
+            return amount;
+        }
+        double fromRate = CurrencyExchangeManager.getRateToTRY(this, from);
         double toRate = CurrencyExchangeManager.getRateToTRY(this, toCurrency);
-
-        return (amount * fromRate) / toRate;
+        return amount * fromRate / toRate;
     }
 
     @Override
@@ -217,11 +326,9 @@ public class AnalyticsActivity extends SecureActivity {
                 return String.format(Locale.getDefault(), "%.1f %s", value, currency);
             }
         });
-
-        PieData data = new PieData(dataSet);
-        pieChart.setData(data);
+        pieChart.setData(new PieData(dataSet));
         pieChart.getDescription().setEnabled(false);
-        pieChart.setCenterText("Expenses");
+        pieChart.setCenterText(analyticsPeriod == 0 ? "This Month" : "Year to Date");
         pieChart.setCenterTextColor(ContextCompat.getColor(this, R.color.text_primary));
         pieChart.setHoleColor(ContextCompat.getColor(this, R.color.bg_card));
         pieChart.setTransparentCircleColor(ContextCompat.getColor(this, R.color.divider));
@@ -242,11 +349,9 @@ public class AnalyticsActivity extends SecureActivity {
             pieChartPercentage.invalidate();
             return;
         }
-
         PieDataSet dataSet = new PieDataSet(entries, "Categories");
         dataSet.setColors(ColorTemplate.MATERIAL_COLORS);
         configurePieDataLabels(dataSet);
-
         PieData data = new PieData(dataSet);
         pieChartPercentage.setData(data);
         pieChartPercentage.setUsePercentValues(true);
@@ -271,8 +376,8 @@ public class AnalyticsActivity extends SecureActivity {
         ArrayList<BarEntry> entries = new ArrayList<>();
         entries.add(new BarEntry(0f, (float) income));
         entries.add(new BarEntry(1f, (float) expense));
-
-        BarDataSet dataSet = new BarDataSet(entries, "Income vs Expense (" + currency + ")");
+        String period = analyticsPeriod == 0 ? "This month (" : "Year to date (";
+        BarDataSet dataSet = new BarDataSet(entries, period + currency + ")");
         dataSet.setColors(new int[]{Color.parseColor("#4CD964"), Color.parseColor("#FF5252")});
         dataSet.setValueTextColor(ContextCompat.getColor(this, R.color.text_primary));
         dataSet.setValueTextSize(12f);
@@ -282,9 +387,7 @@ public class AnalyticsActivity extends SecureActivity {
                 return String.format(Locale.getDefault(), "%.1f %s", value, currency);
             }
         });
-
-        BarData data = new BarData(dataSet);
-        barChart.setData(data);
+        barChart.setData(new BarData(dataSet));
         barChart.getDescription().setEnabled(false);
         barChart.getXAxis().setDrawLabels(false);
         barChart.getAxisLeft().setTextColor(ContextCompat.getColor(this, R.color.text_primary));
@@ -293,14 +396,17 @@ public class AnalyticsActivity extends SecureActivity {
         barChart.invalidate();
     }
 
-    private void setupLineChart(double expense, String currency) {
+    private void setupLineChart(List<MonthStats> months, String currency) {
         ArrayList<Entry> entries = new ArrayList<>();
-        entries.add(new Entry(1f, (float) (expense * 0.8)));
-        entries.add(new Entry(2f, (float) (expense * 0.9)));
-        entries.add(new Entry(3f, (float) (expense * 0.95)));
-        entries.add(new Entry(4f, (float) expense));
-
-        LineDataSet dataSet = new LineDataSet(entries, "Monthly Spending Trend");
+        List<String> labels = new ArrayList<>();
+        for (int i = 0; i < months.size(); i++) {
+            MonthStats month = months.get(i);
+            entries.add(new Entry(i, (float) month.expense));
+            labels.add(month.label);
+        }
+        String title = analyticsPeriod == 0
+                ? "Monthly spending (last 6 months)" : "Monthly spending (this year)";
+        LineDataSet dataSet = new LineDataSet(entries, title);
         dataSet.setColor(Color.parseColor("#3B82F6"));
         dataSet.setCircleColor(Color.parseColor("#3B82F6"));
         dataSet.setLineWidth(2.5f);
@@ -313,11 +419,17 @@ public class AnalyticsActivity extends SecureActivity {
                 return String.format(Locale.getDefault(), "%.1f %s", value, currency);
             }
         });
-
-        LineData data = new LineData(dataSet);
-        lineChart.setData(data);
+        lineChart.setData(new LineData(dataSet));
         lineChart.getDescription().setEnabled(false);
-        lineChart.getXAxis().setDrawLabels(false);
+        lineChart.getXAxis().setDrawLabels(true);
+        lineChart.getXAxis().setGranularity(1f);
+        lineChart.getXAxis().setValueFormatter(new ValueFormatter() {
+            @Override
+            public String getFormattedValue(float value) {
+                int index = Math.round(value);
+                return index >= 0 && index < labels.size() ? labels.get(index) : "";
+            }
+        });
         lineChart.getAxisLeft().setTextColor(ContextCompat.getColor(this, R.color.text_primary));
         lineChart.getAxisRight().setEnabled(false);
         lineChart.getLegend().setTextColor(ContextCompat.getColor(this, R.color.text_primary));

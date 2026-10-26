@@ -29,6 +29,31 @@
             android:orientation="vertical"
             android:paddingHorizontal="16dp">
 
+            <com.google.android.material.button.MaterialButtonToggleGroup
+                android:id="@+id/analyticsPeriodGroup"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="14dp"
+                app:checkedButton="@id/btnPeriodMonth"
+                app:selectionRequired="true"
+                app:singleSelection="true">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnPeriodMonth"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Monthly" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnPeriodYear"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Year to date" />
+            </com.google.android.material.button.MaterialButtonToggleGroup>
+
             <!-- Özet Kartları (Gelir vs Gider) -->
             <LinearLayout
                 android:layout_width="match_parent"
@@ -52,6 +77,7 @@
                         android:orientation="vertical"
                         android:padding="12dp">
                         <TextView
+                            android:id="@+id/tvAnalyticsIncomeLabel"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Total Income"
@@ -85,6 +111,7 @@
                         android:orientation="vertical"
                         android:padding="12dp">
                         <TextView
+                            android:id="@+id/tvAnalyticsExpenseLabel"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Total Expense"
@@ -103,7 +130,7 @@
                 </com.google.android.material.card.MaterialCardView>
             </LinearLayout>
 
-            <!-- Akıllı Tasarruf Önerileri ve Yıllık Projeksiyon Kartı -->
+            <!-- Current month and comparison summary -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -127,6 +154,15 @@
                         android:textColor="@color/text_primary"
                         android:textSize="15sp"
                         android:layout_marginBottom="6dp" />
+
+                    <TextView
+                        android:id="@+id/tvMonthComparison"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp"
+                        android:fontFamily="sans-serif-bold"
+                        android:textColor="@color/text_primary"
+                        android:textSize="13sp" />
 
                     <TextView
                         android:id="@+id/tvSmartInsight"
@@ -158,7 +194,8 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Expense Breakdown by Category"
+                        android:id="@+id/tvCategoryChartTitle"
+                        android:text="This Month by Category"
                         android:textColor="@color/text_primary"
                         android:textSize="14sp"
                         android:fontFamily="sans-serif-bold"
@@ -222,7 +259,8 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Income vs Expense &amp; Payment Methods"
+                        android:id="@+id/tvIncomeExpenseChartTitle"
+                        android:text="Income vs Expense This Month"
                         android:textColor="@color/text_primary"
                         android:textSize="14sp"
                         android:fontFamily="sans-serif-bold"
@@ -254,7 +292,8 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Spending Trend Overview"
+                        android:id="@+id/tvSpendingTrendTitle"
+                        android:text="Actual Monthly Spending (Last 6 Months)"
                         android:textColor="@color/text_primary"
                         android:textSize="14sp"
                         android:fontFamily="sans-serif-bold"

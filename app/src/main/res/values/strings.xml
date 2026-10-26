@@ -1,3 +1,4 @@
 <resources>
+    <string name="widget_description">Shows your next subscription payments</string>
     <string name="app_name">WalletSIOPM</string>
 </resources>

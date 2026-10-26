@@ -58,6 +58,7 @@ public class MainActivity extends BaseActivity {
     private List<Abonelik> filteredList = new ArrayList<>();
     private RecyclerView rvAbonelikler;
     private boolean isAuthenticated = false;
+    private boolean hasLoadedData = false;
 
     private EditText etSearch;
     private ChipGroup chipGroupCategory;
@@ -72,6 +73,7 @@ public class MainActivity extends BaseActivity {
     private void loadData() {
         executor.execute(() -> {
             List<Abonelik> fetchedList = db.aboneDao().tumunuGetir();
+            List<Expense> expenses = db.expenseDao().tumGiderleriGetir();
             for (Abonelik subscription : fetchedList) {
                 CategoryStore.addCategory(this, subscription.getCategory());
             }
@@ -80,7 +82,9 @@ public class MainActivity extends BaseActivity {
                 allSubscriptionList.addAll(fetchedList);
                 updateCategoryChips();
                 applyFilterAndSort();
-                updateSummaryCard(fetchedList);
+                updateSummaryCard(fetchedList, expenses);
+                hasLoadedData = true;
+                SubscriptionWidgetProvider.refresh(this);
             });
         });
     }
@@ -205,23 +209,47 @@ public class MainActivity extends BaseActivity {
         }
     }
 
-    private void updateSummaryCard(List<Abonelik> list) {
+    private void updateSummaryCard(List<Abonelik> list, List<Expense> expenses) {
         SharedPreferences prefs = getSharedPreferences("AppSettings", Context.MODE_PRIVATE);
         String defaultCurrency = prefs.getString("default_currency", "₺");
         float budgetLimit = prefs.getFloat(SettingsActivity.PREF_BUDGET_LIMIT, 0f);
 
+        Calendar currentMonth = Calendar.getInstance();
+        Calendar monthStart = UpcomingPaymentUtils.monthStart(currentMonth);
+        Calendar nextMonth = (Calendar) monthStart.clone();
+        nextMonth.add(Calendar.MONTH, 1);
         double totalCostInDefaultCurrency = 0.0;
+        java.util.Map<String, Double> categoryTotals = new java.util.HashMap<>();
+        List<UpcomingPaymentUtils.DuePayment> thisMonthPayments =
+                UpcomingPaymentUtils.getPaymentsInPeriod(list, monthStart.getTime(),
+                        new java.util.Date(nextMonth.getTimeInMillis() - 1));
 
-        if (list != null) {
-            for (Abonelik a : list) {
-                try {
-                    String amountStr = a.getAmount() != null ? a.getAmount().replace(",", ".") : "0";
-                    double amount = Double.parseDouble(amountStr);
-                    String subCurrency = (a.getCurrency() != null && !a.getCurrency().isEmpty()) ? a.getCurrency() : "₺";
+        for (UpcomingPaymentUtils.DuePayment payment : thisMonthPayments) {
+            Abonelik subscription = payment.getSubscription();
+            double amount = parseAmountForBudget(subscription.getAmount());
+            if (Double.isFinite(amount)) {
+                double convertedAmount = convertCurrency(amount, subscription.getCurrency(), defaultCurrency);
+                totalCostInDefaultCurrency += convertedAmount;
+                String category = subscription.getCategory() == null || subscription.getCategory().trim().isEmpty()
+                        ? "Other" : subscription.getCategory();
+                categoryTotals.put(category, categoryTotals.getOrDefault(category, 0.0) + convertedAmount);
+            }
+        }
 
-                    double convertedAmount = convertCurrency(amount, subCurrency, defaultCurrency);
+        if (expenses != null) {
+            for (Expense expense : expenses) {
+                java.util.Date expenseDate = UpcomingPaymentUtils.parseDate(expense.getDate());
+                if (expenseDate == null || expenseDate.before(monthStart.getTime())
+                        || !expenseDate.before(nextMonth.getTime())) {
+                    continue;
+                }
+                double amount = parseAmountForBudget(expense.getAmount());
+                if (Double.isFinite(amount)) {
+                    double convertedAmount = convertCurrency(amount, expense.getCurrency(), defaultCurrency);
                     totalCostInDefaultCurrency += convertedAmount;
-                } catch (Exception ignored) {
+                    String category = expense.getCategory() == null || expense.getCategory().trim().isEmpty()
+                            ? "Other" : expense.getCategory();
+                    categoryTotals.put(category, categoryTotals.getOrDefault(category, 0.0) + convertedAmount);
                 }
             }
         }
@@ -229,6 +257,12 @@ public class MainActivity extends BaseActivity {
         TextView tvAylikToplam = findViewById(R.id.tvAylikToplam);
         TextView tvToplamAbonelik = findViewById(R.id.tvToplamAbonelik);
         TextView tvYaklasanOdeme = findViewById(R.id.tvYaklasanOdeme);
+        TextView btnUpcomingPayments = findViewById(R.id.btnUpcomingPayments);
+        View.OnClickListener openUpcoming = view ->
+                startActivity(new Intent(MainActivity.this, UpcomingPaymentsActivity.class));
+        if (btnUpcomingPayments != null) {
+            btnUpcomingPayments.setOnClickListener(openUpcoming);
+        }
 
         if (tvAylikToplam != null) {
             tvAylikToplam.setText(String.format(Locale.getDefault(), "%s%.2f", defaultCurrency, totalCostInDefaultCurrency));
@@ -252,18 +286,41 @@ public class MainActivity extends BaseActivity {
         }
 
         if (tvYaklasanOdeme != null) {
-            tvYaklasanOdeme.setText((list != null && !list.isEmpty()) ? "First Added: " + list.get(0).getName() : "Next: -");
+            List<UpcomingPaymentUtils.DuePayment> upcoming =
+                    UpcomingPaymentUtils.getUpcomingPayments(list, Calendar.getInstance().getTime());
+            if (!upcoming.isEmpty()) {
+                UpcomingPaymentUtils.DuePayment next = upcoming.get(0);
+                String date = new java.text.SimpleDateFormat("d MMM", Locale.getDefault()).format(next.getDate());
+                tvYaklasanOdeme.setText("Next: " + next.getSubscription().getName() + " (" + date + ")");
+            } else {
+                tvYaklasanOdeme.setText("Next: -");
+            }
+            tvYaklasanOdeme.setOnClickListener(openUpcoming);
         }
 
         ProgressBar progressBar = findViewById(R.id.budgetProgressBar);
         TextView tvBudgetStatus = findViewById(R.id.tvBudgetStatus);
+        List<String> categoryWarnings = new ArrayList<>();
+        for (java.util.Map.Entry<String, Double> entry : categoryTotals.entrySet()) {
+            String preferenceName = "cat_budget_" + entry.getKey().replaceAll("[^a-zA-Z0-9]", "_");
+            float categoryLimit = prefs.getFloat(preferenceName, 0f);
+            if (categoryLimit > 0 && entry.getValue() > categoryLimit) {
+                categoryWarnings.add(entry.getKey());
+            }
+        }
+        Collections.sort(categoryWarnings);
         if (progressBar != null) {
             if (budgetLimit > 0) {
                 progressBar.setVisibility(View.VISIBLE);
                 int progress = (int) ((totalCostInDefaultCurrency / budgetLimit) * 100);
                 progressBar.setProgress(Math.min(100, progress));
                 if (tvBudgetStatus != null) {
-                    tvBudgetStatus.setText(String.format(Locale.getDefault(), "Budget Used: %.1f%% (%s%.2f / %s%.0f)", (double) progress, defaultCurrency, totalCostInDefaultCurrency, defaultCurrency, budgetLimit));
+                    String status = String.format(Locale.getDefault(), "Budget Used: %.1f%% (%s%.2f / %s%.0f)",
+                            (double) progress, defaultCurrency, totalCostInDefaultCurrency, defaultCurrency, budgetLimit);
+                    if (!categoryWarnings.isEmpty()) {
+                        status += " • Over category limit: " + android.text.TextUtils.join(", ", categoryWarnings);
+                    }
+                    tvBudgetStatus.setText(status);
                     tvBudgetStatus.setVisibility(View.VISIBLE);
                 }
                 if (progress > 100) {
@@ -277,7 +334,11 @@ public class MainActivity extends BaseActivity {
                 progressBar.setVisibility(View.VISIBLE);
                 progressBar.setProgress(0);
                 if (tvBudgetStatus != null) {
-                    tvBudgetStatus.setText("Budget Limit: Not set (Tap Settings to set)");
+                    String status = "Budget Limit: Not set (Tap Settings to set)";
+                    if (!categoryWarnings.isEmpty()) {
+                        status += " • Over category limit: " + android.text.TextUtils.join(", ", categoryWarnings);
+                    }
+                    tvBudgetStatus.setText(status);
                     tvBudgetStatus.setVisibility(View.VISIBLE);
                 }
             }
@@ -296,11 +357,32 @@ public class MainActivity extends BaseActivity {
         return (amount * fromRate) / toRate;
     }
 
+    private double parseAmountForBudget(String value) {
+        if (value == null) {
+            return Double.NaN;
+        }
+        try {
+            return Double.parseDouble(value.replace(",", "."));
+        } catch (NumberFormatException ignored) {
+            return Double.NaN;
+        }
+    }
+
 
 
     @Override
     protected int getSelectedNavId() {
         return R.id.nav_subscriptions; // MainActivity için
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        boolean lockEnabled = getSharedPreferences("AppSettings", Context.MODE_PRIVATE)
+                .getBoolean(SettingsActivity.PREF_APP_LOCK_ENABLED, false);
+        if (hasLoadedData && (!lockEnabled || isAuthenticated)) {
+            loadData();
+        }
     }
 
     @Override
@@ -323,8 +405,6 @@ public class MainActivity extends BaseActivity {
             getWindow().setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE);
             if (mainView != null) mainView.setVisibility(View.INVISIBLE);
             checkBiometricAuth();
-        } else {
-            loadData();
         }
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
@@ -402,6 +482,10 @@ public class MainActivity extends BaseActivity {
         adapter = new AboneAdapter(filteredList, db, executor, this::loadData);
         rvAbonelikler.setAdapter(adapter);
         rvAbonelikler.setLayoutManager(new LinearLayoutManager(this));
+
+        if (!isLockEnabled) {
+            loadData();
+        }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, 101);

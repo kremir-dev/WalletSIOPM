@@ -30,6 +30,22 @@
             android:name=".AbonelikHatirlatici"
             android:exported="false" />
 
+        <receiver
+            android:name=".SubscriptionWidgetProvider"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/subscription_widget_info" />
+        </receiver>
+
+        <activity
+            android:name=".UpcomingPaymentsActivity"
+            android:exported="false"
+            android:taskAffinity="" />
+
         <!-- Settings Activity -->
         <activity
             android:name=".SettingsActivity"
